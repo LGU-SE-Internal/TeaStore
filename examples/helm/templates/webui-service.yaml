@@ -9,15 +9,15 @@ metadata:
     {{- toYaml . | nindent 8 }}
     {{- end }}
 spec:
-  {{- if and (.Values.clientside_loadbalancer) (eq ( .Values.webui.replicaCount | int ) 1) }}
-  clusterIP: None
-  {{- else }}
+  {{- if .Values.webui.service.type }}
   type: {{ .Values.webui.service.type }}
+  {{- else if and (.Values.clientside_loadbalancer) (eq ( .Values.webui.replicaCount | int ) 1) }}
+  clusterIP: None
   {{- end }}
+  selector:
+    {{- include "teastore.webui.selectorLabels" . | nindent 4 }}
   ports:
     - port: {{ .Values.webui.service.port }}
       name: http-webui
       targetPort: 8080
       protocol: TCP
-  selector:
-    {{- include "teastore.webui.selectorLabels" . | nindent 4 }}
