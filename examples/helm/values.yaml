@@ -184,3 +184,13 @@ persistence:
   tolerations: []
   affinity: {}
   svc_name: teastore-persistence
+
+# OpenTelemetry Instrumentation settings
+opentelemetry:
+  enabled: true
+  # Language type for instrumentation: java, python, nodejs, dotnet, go, ruby, php
+  language: java
+  # The instrumentation resource name in monitoring namespace
+  instrumentationName: "opentelemetry-kube-stack"
+  # The namespace where OpenTelemetry Instrumentation resource is deployed
+  monitoringNamespace: "monitoring"

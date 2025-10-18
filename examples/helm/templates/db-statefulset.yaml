@@ -19,6 +19,7 @@ spec:
         {{- with .Values.db.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- include "teastore.otel.podAnnotations" . | nindent 8 }}
       labels:
         {{- include "teastore.db.selectorLabels" . | nindent 8 }}
     spec:
