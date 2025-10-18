@@ -1,4 +1,4 @@
-clientside_loadbalancer: false # Deploys as Statefulset which enables communication to every instance individually. A kubernetes service is used otherwise
+clientside_loadbalancer: true # Deploys as Statefulset which enables communication to every instance individually. A kubernetes service is used otherwise
 webui:
   enabled: true
   replicaCount: 1
