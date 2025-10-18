@@ -12,7 +12,7 @@ webui:
   podSecurityContext: {}
   securityContext: {}
   service:
-    type: ClusterIP
+    type: NodePort
     port: 80
     annotations: {}
   resources: {}
@@ -89,7 +89,7 @@ auth:
   podSecurityContext: {}
   securityContext: {}
   service:
-    type: ClusterIP
+    type: NodePort
     port: 8080
     annotations: {}
   resources: {}
@@ -116,7 +116,7 @@ image:
   podSecurityContext: {}
   securityContext: {}
   service:
-    type: ClusterIP
+    type: NodePort
     port: 8080
     annotations: {}
   resources: {}
@@ -143,7 +143,7 @@ recommender:
   podSecurityContext: {}
   securityContext: {}
   service:
-    type: ClusterIP
+    type: NodePort
     port: 8080
     annotations: {}
   resources: {}
@@ -170,7 +170,7 @@ persistence:
   podSecurityContext: {}
   securityContext: {}
   service:
-    type: ClusterIP
+    type: NodePort
     port: 8080
     annotations: {}
   resources: {}
