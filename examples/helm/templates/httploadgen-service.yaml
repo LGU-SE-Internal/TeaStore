@@ -1,0 +1,18 @@
+{{- if .Values.httploadgen.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "teastore.httploadgen.fullname" . }}
+  labels:
+    {{- include "teastore.labels" . | nindent 4 }}
+    app.kubernetes.io/component: httploadgen
+spec:
+  type: {{ .Values.httploadgen.service.type }}
+  ports:
+    - port: {{ .Values.httploadgen.service.port }}
+      targetPort: 24226
+      protocol: TCP
+      name: loadgen
+  selector:
+    {{- include "teastore.httploadgen.selectorLabels" . | nindent 4 }}
+{{- end }}

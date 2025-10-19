@@ -1,0 +1,86 @@
+{{- if .Values.httploaddirector.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "teastore.httploaddirector.fullname" . }}
+  labels:
+    {{- include "teastore.labels" . | nindent 4 }}
+    app.kubernetes.io/component: httploaddirector
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "teastore.httploaddirector.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: {{ .Values.httploaddirector.restartPolicy }}
+      initContainers:
+        - name: wait-for-loadgen
+          image: busybox:latest
+          command: 
+            - sh
+            - -c
+            - |
+              echo "Waiting for LoadGen to be ready..."
+              until nc -z -v -w5 {{ include "teastore.httploadgen.fullname" . }} 24226; do 
+                echo "LoadGen not ready, waiting..."
+                sleep 2
+              done
+              echo "LoadGen is ready!"
+      containers:
+        - name: httploaddirector
+          image: "{{ .Values.httploaddirector.image.repository }}:{{ .Values.httploaddirector.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.httploaddirector.image.pullPolicy }}
+          env:
+            - name: LOADGEN_HOST
+              value: {{ include "teastore.httploadgen.fullname" . }}
+            - name: LOADGEN_PORT
+              value: "{{ .Values.httploadgen.service.port }}"
+            - name: LOAD_PROFILE
+              value: "{{ .Values.httploaddirector.loadProfile }}"
+            - name: LUA_SCRIPT
+              value: "{{ .Values.httploaddirector.luaScript }}"
+            - name: OUTPUT_FILE
+              value: "{{ .Values.httploaddirector.outputFile }}"
+            - name: NUM_THREADS
+              value: "{{ .Values.httploaddirector.numThreads }}"
+            - name: DOCKER_MONITOR_ENABLED
+              value: "{{ .Values.httploaddirector.dockerMonitor.enabled }}"
+            {{- if .Values.httploaddirector.dockerMonitor.enabled }}
+            - name: DOCKER_MONITOR_TARGETS
+              value: "{{ .Values.httploaddirector.dockerMonitor.targets }}"
+            {{- end }}
+          volumeMounts:
+            - name: config-profiles
+              mountPath: /director/profiles
+            - name: config-scripts
+              mountPath: /director/scripts
+            - name: results
+              mountPath: /director/results
+          resources:
+            {{- toYaml .Values.httploaddirector.resources | nindent 12 }}
+      volumes:
+        - name: config-profiles
+          configMap:
+            name: {{ include "teastore.httploaddirector.fullname" . }}-config
+            items:
+              - key: increasingLowIntensity.csv
+                path: increasingLowIntensity.csv
+              - key: increasingMedIntensity.csv
+                path: increasingMedIntensity.csv
+              - key: increasingHighIntensity.csv
+                path: increasingHighIntensity.csv
+        - name: config-scripts
+          configMap:
+            name: {{ include "teastore.httploaddirector.fullname" . }}-config
+            items:
+              - key: teastore_browse.lua
+                path: teastore_browse.lua
+              - key: teastore_buy.lua
+                path: teastore_buy.lua
+        - name: results
+          emptyDir: {}
+      {{- with .Values.httploaddirector.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

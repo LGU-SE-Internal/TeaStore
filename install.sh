@@ -1,0 +1,1 @@
+helm install teastore /home/nn/workspace/TeaStore/examples/helm/ --namespace teastore --create-namespace

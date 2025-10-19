@@ -1,0 +1,16 @@
+{{- if .Values.httploaddirector.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "teastore.httploaddirector.fullname" . }}-config
+  labels:
+    {{- include "teastore.labels" . | nindent 4 }}
+    app.kubernetes.io/component: httploaddirector
+binaryData:
+  teastore_browse.lua: {{ .Files.Get "config/teastore_browse.lua" | b64enc }}
+  teastore_buy.lua: {{ .Files.Get "config/teastore_buy.lua" | b64enc }}
+  increasingLowIntensity.csv: {{ .Files.Get "config/increasingLowIntensity.csv" | b64enc }}
+  increasingMedIntensity.csv: {{ .Files.Get "config/increasingMedIntensity.csv" | b64enc }}
+  increasingHighIntensity.csv: {{ .Files.Get "config/increasingHighIntensity.csv" | b64enc }}
+{{- end }}
+

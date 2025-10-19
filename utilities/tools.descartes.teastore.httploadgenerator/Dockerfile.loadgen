@@ -1,0 +1,14 @@
+FROM tomcat:10.0.27-jdk11-temurin
+
+# Create working directory
+RUN mkdir -p /loadgen
+WORKDIR /loadgen
+
+# Download the HTTP Load Generator JAR
+COPY httploadgenerator.jar /loadgen/httploadgenerator.jar
+
+# Expose port for load generator communication
+EXPOSE 24226
+
+# Start in load generator mode
+CMD ["java", "-jar", "/loadgen/httploadgenerator.jar", "loadgenerator"]

@@ -1,0 +1,44 @@
+{{- if .Values.jmeter.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "teastore.jmeter.fullname" . }}
+  labels:
+    {{- include "teastore.jmeter.labels" . | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.jmeter.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "teastore.jmeter.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- include "teastore.otel.podAnnotations" . | nindent 8 }}
+      
+    spec:
+      restartPolicy: {{ .Values.jmeter.restartPolicy }}
+      containers:
+      - name: jmeter
+        image: "{{ .Values.jmeter.image.repository }}:{{ .Values.jmeter.image.tag }}"
+        imagePullPolicy: {{ .Values.jmeter.image.pullPolicy }}
+        env:
+        - name: HOSTNAME
+          value: {{ .Values.jmeter.targetHost | quote }}
+        - name: PORT
+          value: {{ .Values.jmeter.targetPort | quote }}
+        - name: NUM_USERS
+          value: {{ .Values.jmeter.numUsers | quote }}
+        - name: RAMP_UP
+          value: {{ .Values.jmeter.rampUp | quote }}
+        - name: DURATION
+          value: {{ .Values.jmeter.duration | quote }}
+        - name: TEST_PLAN
+          value: {{ .Values.jmeter.testPlan | quote }}
+        volumeMounts:
+        - name: results
+          mountPath: /jmeter/results
+        resources:
+          {{- toYaml .Values.jmeter.resources | nindent 10 }}
+      volumes:
+      - name: results
+        emptyDir: {}
+{{- end }}

@@ -60,3 +60,44 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+HTTP Load Generator helpers
+*/}}
+{{- define "teastore.httploadgen.fullname" -}}
+{{- printf "%s-httploadgen" (include "teastore.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "teastore.httploadgen.selectorLabels" -}}
+{{ include "teastore.selectorLabels" . }}
+app.kubernetes.io/component: httploadgen
+{{- end }}
+
+{{/*
+HTTP Load Director helpers
+*/}}
+{{- define "teastore.httploaddirector.fullname" -}}
+{{- printf "%s-httploaddirector" (include "teastore.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "teastore.httploaddirector.selectorLabels" -}}
+{{ include "teastore.selectorLabels" . }}
+app.kubernetes.io/component: httploaddirector
+{{- end }}
+
+{{/*
+JMeter helpers
+*/}}
+{{- define "teastore.jmeter.fullname" -}}
+{{- printf "%s-jmeter" (include "teastore.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "teastore.jmeter.labels" -}}
+{{ include "teastore.labels" . }}
+app.kubernetes.io/component: jmeter
+{{- end }}
+
+{{- define "teastore.jmeter.selectorLabels" -}}
+{{ include "teastore.selectorLabels" . }}
+app.kubernetes.io/component: jmeter
+{{- end }}

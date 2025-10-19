@@ -194,3 +194,74 @@ opentelemetry:
   instrumentationName: "opentelemetry-kube-stack"
   # The namespace where OpenTelemetry Instrumentation resource is deployed
   monitoringNamespace: "monitoring"
+
+# HTTP Load Generator settings
+httploadgen:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: 10.10.10.240/library/teastore-httploadgen
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 24226
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}
+
+# HTTP Load Director settings
+httploaddirector:
+  enabled: false
+  restartPolicy: Never
+  image:
+    repository: 10.10.10.240/library/teastore-httploaddirector
+    pullPolicy: Always
+    tag: "latest"
+  # Load profile to use (file path in container)
+  loadProfile: "/director/profiles/increasingLowIntensity.csv"
+  # Lua script to use (file path in container)
+  luaScript: "/director/scripts/teastore_browse.lua"
+  # Output file path
+  outputFile: "/director/results/output.csv"
+  # Number of load generation threads
+  numThreads: 10
+  # Docker monitoring configuration
+  dockerMonitor:
+    enabled: false
+    # Comma-separated values: <IP>:<PORT>:<CONTAINER_ID>,<IP>:<PORT>:<CONTAINER_ID>
+    targets: ""
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  nodeSelector: {}
+
+# JMeter Load Testing settings
+jmeter:
+  enabled: true
+  backoffLimit: 0
+  restartPolicy: Never
+  image:
+    repository: 10.10.10.240/library/teastore-jmeter
+    pullPolicy: Always
+    tag: "latest"
+  # Target WebUI service
+  targetHost: "teastore-webui"
+  targetPort: "8080"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}

@@ -1,0 +1,29 @@
+FROM tomcat:10.0.27-jdk11-temurin
+
+# Create working directory
+RUN mkdir -p /director/profiles /director/scripts /director/results
+WORKDIR /director
+
+# Download the HTTP Load Generator JAR
+COPY httploadgenerator.jar /director/httploadgenerator.jar
+
+# Copy load profiles and lua scripts
+COPY profiles/*.csv /director/profiles/
+COPY scripts/*.lua /director/scripts/
+
+# Environment variables for configuration
+ENV LOADGEN_HOST="loadgen"
+ENV LOADGEN_PORT="2223"
+ENV LOAD_PROFILE="/director/profiles/increasingLowIntensity.csv"
+ENV LUA_SCRIPT="/director/scripts/teastore_browse.lua"
+ENV OUTPUT_FILE="/director/results/output.csv"
+ENV NUM_THREADS="10"
+ENV DOCKER_MONITOR_ENABLED="false"
+ENV DOCKER_MONITOR_TARGETS=""
+
+# Copy entrypoint script
+COPY start-director.sh /director/start-director.sh
+RUN chmod +x /director/start-director.sh
+
+# Start director with configurable parameters
+CMD ["/director/start-director.sh"]
