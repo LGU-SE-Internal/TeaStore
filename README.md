@@ -15,6 +15,7 @@ Check out our [Getting Started Guide](GET_STARTED.md) for information on how to 
    1. [Generating Load](GET_STARTED.md#21-generating-load)
       1. [LIMBO HTTP Load Generator](GET_STARTED.md#211-limbo-http-load-generator)
       2. [JMeter™](GET_STARTED.md#212-jmeter)
+      3. [Locust](GET_STARTED.md#213-locust)
    2. [Instrumenting the TeaStore](GET_STARTED.md#22-instrumenting-the-teastore)
       1. [Docker containers with Kieker](#221-docker-containers-with-kieker)
       2. [OpenTracing with Kubernetes and Istio](GET_STARTED.md#222-opentracing-with-kubernetes-and-istio)
