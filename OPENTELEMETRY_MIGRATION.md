@@ -79,6 +79,19 @@ To:
 
 **Rationale:** OTel Java agent automatically propagates trace context via HTTP headers using W3C Trace Context or B3 propagation. Manual OpenTracing propagation is redundant and can interfere.
 
+### 4. Removed Kieker Monitoring Agent
+
+**Files Modified:**
+- `utilities/tools.descartes.teastore.dockerbase/Dockerfile`
+- `utilities/tools.descartes.teastore.dockerbase/start.sh`
+
+**Change:** Removed Kieker monitoring agent configuration from the base Docker image:
+- Removed Kieker agent JAR, AOP configuration, and properties files from Docker image
+- Removed `RABBITMQ_HOST` and `LOG_TO_FILE` environment variables
+- Removed Kieker agent initialization from `start.sh`
+
+**Rationale:** With OTel auto-instrumentation, Kieker monitoring becomes redundant. The OTel Java agent provides comprehensive observability including traces, metrics, and logs without requiring AspectJ weaving or additional agents. Removing Kieker reduces container size and eliminates potential agent conflicts.
+
 ## OpenTracing Dependencies Retained
 
 **Important:** The Jaeger client dependency (`io.jaegertracing:jaeger-client:0.32.0`) in `utilities/tools.descartes.teastore.registryclient/pom.xml` has been **retained** but is no longer actively used for tracing.

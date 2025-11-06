@@ -128,17 +128,32 @@ TraceID: %X{traceId} SpanID: %X{spanId}
 **原因：**
 OTel Java agent会自动处理HTTP头的trace上下文传播，不需要手动inject/extract。
 
+### 修改4: 移除Kieker监控Agent
+
+**修改的文件：**
+- `utilities/tools.descartes.teastore.dockerbase/Dockerfile`
+- `utilities/tools.descartes.teastore.dockerbase/start.sh`
+
+**修改内容：**
+- 从Docker镜像中移除了Kieker agent JAR、AOP配置和属性文件
+- 移除了`RABBITMQ_HOST`和`LOG_TO_FILE`环境变量
+- 从`start.sh`中移除了Kieker agent初始化代码
+
+**原因：**
+使用OTel自动注入后，Kieker监控变得冗余。OTel Java agent提供全面的可观测性（traces、metrics、logs），无需AspectJ织入或额外的agent。移除Kieker可以减小容器大小并消除潜在的agent冲突。
+
 ### 保留但不使用的代码
 
 **重要说明：**
 - OpenTracing的依赖（jaeger-client）仍然保留在pom.xml中
 - `Tracing.java`工具类代码仍然存在
-- 只是不再调用这些代码
+- Kieker模块（kieker.probes, kieker.rabbitmq）保留在代码库中供特殊用途
+- 这些代码和依赖不再被主动调用
 
 **为什么保留：**
 1. 避免大规模重构
 2. 保持向后兼容性
-3. 不影响Kieker监控功能
+3. 某些研究场景可能需要Kieker
 4. 依赖虽然存在但不会干扰OTel
 
 ## 如何使用
