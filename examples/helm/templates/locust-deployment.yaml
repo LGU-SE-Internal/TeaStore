@@ -1,21 +1,22 @@
 {{- if .Values.locust.enabled -}}
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: {{ include "teastore.locust.fullname" . }}
   labels:
     {{- include "teastore.locust.labels" . | nindent 4 }}
 spec:
-  backoffLimit: {{ .Values.locust.backoffLimit }}
+  replicas: {{ .Values.locust.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "teastore.locust.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         {{- include "teastore.locust.selectorLabels" . | nindent 8 }}
       annotations:
         {{- include "teastore.otel.podAnnotations" . | nindent 8 }}
-      
     spec:
-      restartPolicy: {{ .Values.locust.restartPolicy }}
       containers:
       - name: locust
         image: "{{ .Values.locust.image.repository }}:{{ .Values.locust.image.tag }}"

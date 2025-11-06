@@ -273,8 +273,7 @@ jmeter:
 # Locust Load Testing settings
 locust:
   enabled: true
-  backoffLimit: 0
-  restartPolicy: Never
+  replicaCount: 1
   image:
     repository: 10.10.10.240/library/teastore-locust
     pullPolicy: Always
@@ -286,8 +285,8 @@ locust:
   users: "10"
   # Rate at which users are spawned (users per second)
   spawnRate: "1"
-  # How long to run the test (e.g., 5m, 1h, 300s)
-  runTime: "5m"
+  # How long to run the test (e.g., 5m, 1h, 300s). Leave empty for continuous running.
+  runTime: ""
   resources:
     limits:
       cpu: 2000m

@@ -16,9 +16,20 @@ docker build -t teastore-locust .
 
 ## Running the Container
 
-### Headless Mode (Default)
+### Continuous Running (Default)
 
-The container runs in headless mode by default, which is suitable for automated testing:
+The container runs continuously by default, which is suitable for long-term load testing:
+
+```bash
+docker run -e TARGET_HOST=http://teastore-webui:8080 \
+           -e USERS=10 \
+           -e SPAWN_RATE=1 \
+           teastore-locust
+```
+
+### Time-Limited Run
+
+To run for a specific duration, set the `RUN_TIME` environment variable:
 
 ```bash
 docker run -e TARGET_HOST=http://teastore-webui:8080 \
@@ -48,7 +59,7 @@ The following environment variables can be configured:
 - `TARGET_HOST`: The URL of the TeaStore WebUI service (default: `http://teastore-webui:8080`)
 - `USERS`: Number of concurrent users to simulate (default: `10`)
 - `SPAWN_RATE`: Rate at which users are spawned, in users per second (default: `1`)
-- `RUN_TIME`: How long to run the test (e.g., `5m`, `1h`, `300s`) (default: `5m`)
+- `RUN_TIME`: How long to run the test (e.g., `5m`, `1h`, `300s`). Leave empty for continuous running (default: empty/continuous)
 
 ## Test Scenario
 
@@ -64,7 +75,16 @@ The test script simulates realistic user behavior with the following actions:
 
 ## Using with Kubernetes/Helm
 
-This image is integrated into the TeaStore Helm chart. To deploy it:
+This image is integrated into the TeaStore Helm chart as a Deployment. To deploy it for continuous running:
+
+```bash
+helm install teastore ./examples/helm \
+  --set locust.enabled=true \
+  --set locust.users=50 \
+  --set locust.spawnRate=5
+```
+
+To run for a limited time period:
 
 ```bash
 helm install teastore ./examples/helm \
@@ -86,6 +106,7 @@ skaffold build -p locust
 
 - `Dockerfile`: Defines the Docker image
 - `locustfile.py`: The Locust test script that defines user behavior
+- `entrypoint.sh`: Entrypoint script that handles optional RUN_TIME parameter
 
 ## Further Reading
 
