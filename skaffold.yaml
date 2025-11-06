@@ -9,25 +9,14 @@ build:
     push: true
     useDockerCLI: false
   artifacts:
-    # Base image must be built first - all services depend on it
-    - image: 10.10.10.240/library/teastore-base
-      context: utilities/tools.descartes.teastore.dockerbase
-      docker:
-        dockerfile: Dockerfile
     - image: teastore-webui
       context: services/tools.descartes.teastore.webui
       docker:
         dockerfile: Dockerfile
-      requires:
-        - image: 10.10.10.240/library/teastore-base
-          alias: BASE
     - image: teastore-registry
       context: services/tools.descartes.teastore.registry
       docker:
         dockerfile: Dockerfile
-      requires:
-        - image: 10.10.10.240/library/teastore-base
-          alias: BASE
     - image: teastore-db
       context: utilities/tools.descartes.teastore.database
       docker:
@@ -36,30 +25,18 @@ build:
       context: services/tools.descartes.teastore.auth
       docker:
         dockerfile: Dockerfile
-      requires:
-        - image: 10.10.10.240/library/teastore-base
-          alias: BASE
     - image: teastore-image
       context: services/tools.descartes.teastore.image
       docker:
         dockerfile: Dockerfile
-      requires:
-        - image: 10.10.10.240/library/teastore-base
-          alias: BASE
     - image: teastore-recommender
       context: services/tools.descartes.teastore.recommender
       docker:
         dockerfile: Dockerfile
-      requires:
-        - image: 10.10.10.240/library/teastore-base
-          alias: BASE
     - image: teastore-persistence
       context: services/tools.descartes.teastore.persistence
       docker:
         dockerfile: Dockerfile
-      requires:
-        - image: 10.10.10.240/library/teastore-base
-          alias: BASE
     - image: teastore-jmeter
       context: utilities/tools.descartes.teastore.jmeter
       docker:
