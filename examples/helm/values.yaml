@@ -277,14 +277,14 @@ locust:
   image:
     repository: 10.10.10.240/library/teastore-locust
     pullPolicy: Always
-    tag: "latest"
+    tag: ""
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"
   # Number of concurrent users to simulate
-  users: "10"
+  users: "50"
   # Rate at which users are spawned (users per second)
-  spawnRate: "1"
+  spawnRate: "5"
   # How long to run the test (e.g., 5m, 1h, 300s). Leave empty for continuous running.
   runTime: ""
   resources:

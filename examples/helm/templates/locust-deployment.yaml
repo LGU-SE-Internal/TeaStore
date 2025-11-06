@@ -15,7 +15,7 @@ spec:
       labels:
         {{- include "teastore.locust.selectorLabels" . | nindent 8 }}
       annotations:
-        {{- include "teastore.otel.podAnnotations" . | nindent 8 }}
+        instrumentation.opentelemetry.io/inject-python: "monitoring/opentelemetry-kube-stack"
     spec:
       containers:
       - name: locust
