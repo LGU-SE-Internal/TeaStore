@@ -49,3 +49,7 @@ build:
       context: utilities/tools.descartes.teastore.httploadgenerator
       docker:
         dockerfile: Dockerfile.loadgen
+    - image: teastore-locust
+      context: utilities/tools.descartes.teastore.locust
+      docker:
+        dockerfile: Dockerfile

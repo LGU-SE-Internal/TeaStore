@@ -1,0 +1,35 @@
+{{- if .Values.locust.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "teastore.locust.fullname" . }}
+  labels:
+    {{- include "teastore.locust.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.locust.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "teastore.locust.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "teastore.locust.selectorLabels" . | nindent 8 }}
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "monitoring/opentelemetry-kube-stack"
+    spec:
+      containers:
+      - name: locust
+        image: "{{ .Values.locust.image.repository }}:{{ .Values.locust.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.locust.image.pullPolicy }}
+        env:
+        - name: TARGET_HOST
+          value: "http://{{ .Values.locust.targetHost }}:{{ .Values.locust.targetPort }}"
+        - name: USERS
+          value: {{ .Values.locust.users | quote }}
+        - name: SPAWN_RATE
+          value: {{ .Values.locust.spawnRate | quote }}
+        - name: RUN_TIME
+          value: {{ .Values.locust.runTime | quote }}
+        resources:
+          {{- toYaml .Values.locust.resources | nindent 10 }}
+{{- end }}
