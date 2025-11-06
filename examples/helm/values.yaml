@@ -280,7 +280,7 @@ locust:
     tag: ""
   # Target WebUI service
   targetHost: "teastore-webui"
-  targetPort: "8080"
+  targetPort: "80"
   # Number of concurrent users to simulate
   users: "50"
   # Rate at which users are spawned (users per second)

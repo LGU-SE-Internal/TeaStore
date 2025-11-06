@@ -374,9 +374,9 @@ The following parameters can be configured in `values.yaml`:
 - `locust.enabled`: Enable/disable the Locust deployment (default: `true`)
 - `locust.replicaCount`: Number of Locust replicas (default: `1`)
 - `locust.targetHost`: Target WebUI service hostname (default: `teastore-webui`)
-- `locust.targetPort`: Target WebUI service port (default: `8080`)
-- `locust.users`: Number of concurrent users to simulate (default: `10`)
-- `locust.spawnRate`: Rate at which users are spawned in users/second (default: `1`)
+- `locust.targetPort`: Target WebUI service port (default: `80`)
+- `locust.users`: Number of concurrent users to simulate (default: `50`)
+- `locust.spawnRate`: Rate at which users are spawned in users/second (default: `5`)
 - `locust.runTime`: Test duration (e.g., `5m`, `1h`, `300s`). Leave empty for continuous running (default: empty/continuous)
 
 For more details, see `utilities/tools.descartes.teastore.locust/README.md`.
