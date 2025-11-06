@@ -12,7 +12,8 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import io.opentracing.Scope;
+// OpenTracing imports commented out for OpenTelemetry compatibility
+// import io.opentracing.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import kieker.common.record.controlflow.OperationExecutionRecord;
@@ -20,7 +21,7 @@ import kieker.monitoring.core.controller.IMonitoringController;
 import kieker.monitoring.core.controller.MonitoringController;
 import kieker.monitoring.core.registry.ControlFlowRegistry;
 import kieker.monitoring.core.registry.SessionRegistry;
-import tools.descartes.teastore.registryclient.tracing.Tracing;
+// import tools.descartes.teastore.registryclient.tracing.Tracing;
 
 /**
  * Servlet filter for request tracking.
@@ -59,7 +60,9 @@ public class TrackingFilter implements Filter {
    */
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
-    try (Scope scope = Tracing.extractCurrentSpan((HttpServletRequest) request)) {
+    // OpenTracing scope extraction removed for OpenTelemetry auto-instrumentation compatibility
+    // The OTel Java agent will automatically handle distributed tracing context propagation
+    // try (Scope scope = Tracing.extractCurrentSpan((HttpServletRequest) request)) {
       if (!CTRLINST.isMonitoringEnabled()) {
         chain.doFilter(request, response);
         return;
@@ -152,7 +155,7 @@ public class TrackingFilter implements Filter {
       wrappedResponse.addHeader(HEADER_FIELD,
           traceId + "," + sessionId + "," + (eoi) + "," + Integer.toString(CF_REGISTRY.recallThreadLocalESS()));
       out.write(wrappedResponse.toString());
-    }
+    // }
   }
 
   /**

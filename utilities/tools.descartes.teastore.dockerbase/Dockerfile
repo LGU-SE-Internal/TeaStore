@@ -27,8 +27,6 @@ ENV RECOMMENDER_ALGORITHM SlopeOne
 ENV PROXY_NAME unset
 ENV PROXY_PORT unset
 ENV TOMCAT_HEAP_MEM_PERCENTAGE 50
-ENV LOG_TO_FILE false
-ENV RABBITMQ_HOST unset
 ENV USE_HTTPS false
 
 # Copy script to replace placeholders in context.xml with the environment variables
@@ -39,13 +37,8 @@ RUN chmod +x /usr/local/tomcat/bin/start.sh
 # Environment variable no longer needed. Replaced by sed in start.sh
 # ENV JAVA_OPTS $JAVA_OPTS -Dsecurerandom.source=file 837:/dev/urandom
 
-RUN mkdir -p /kieker/logs
 # Import self-signed certificate for HTTPS teastore into keystore. NOTE: to adapt certificate hostnames, configure and run ssl/generate_cert.sh and rebuild the container!
 RUN keytool -import -noprompt -trustcacerts -alias teastoressl -file /usr/local/tomcat/ssl/cert.pem -keystore "/opt/java/openjdk/lib/security/cacerts" -storepass changeit
-
-COPY kieker.monitoring.properties 							/kieker/config/kieker.monitoring.properties
-COPY aop.xml 												            /usr/local/tomcat/lib/aop.xml
-COPY kieker-2.0.0-aspectj.jar 					/kieker/agent/agent.jar
 
 EXPOSE 8080
 

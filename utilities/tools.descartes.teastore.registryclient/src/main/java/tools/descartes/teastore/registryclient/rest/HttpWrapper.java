@@ -9,7 +9,8 @@ import kieker.monitoring.core.controller.IMonitoringController;
 import kieker.monitoring.core.controller.MonitoringController;
 import kieker.monitoring.core.registry.ControlFlowRegistry;
 import kieker.monitoring.core.registry.SessionRegistry;
-import tools.descartes.teastore.registryclient.tracing.Tracing;
+// OpenTracing import commented out for OpenTelemetry compatibility
+// import tools.descartes.teastore.registryclient.tracing.Tracing;
 
 import jakarta.ws.rs.client.WebTarget;
 
@@ -41,7 +42,9 @@ public final class HttpWrapper {
    */
   public static Builder wrap(WebTarget target) {
     Builder builder = target.request(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON);
-    Tracing.inject(builder);
+    // OpenTracing inject call removed for OpenTelemetry auto-instrumentation compatibility
+    // The OTel Java agent will automatically propagate trace context
+    // Tracing.inject(builder);
     if (CTRLINST.isMonitoringEnabled()) {
       final String sessionId = SESSION_REGISTRY.recallThreadLocalSessionId();
       final int eoi; // this is executionOrderIndex-th execution in this trace
