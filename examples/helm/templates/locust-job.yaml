@@ -1,0 +1,34 @@
+{{- if .Values.locust.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "teastore.locust.fullname" . }}
+  labels:
+    {{- include "teastore.locust.labels" . | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.locust.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "teastore.locust.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- include "teastore.otel.podAnnotations" . | nindent 8 }}
+      
+    spec:
+      restartPolicy: {{ .Values.locust.restartPolicy }}
+      containers:
+      - name: locust
+        image: "{{ .Values.locust.image.repository }}:{{ .Values.locust.image.tag }}"
+        imagePullPolicy: {{ .Values.locust.image.pullPolicy }}
+        env:
+        - name: TARGET_HOST
+          value: "http://{{ .Values.locust.targetHost }}:{{ .Values.locust.targetPort }}"
+        - name: USERS
+          value: {{ .Values.locust.users | quote }}
+        - name: SPAWN_RATE
+          value: {{ .Values.locust.spawnRate | quote }}
+        - name: RUN_TIME
+          value: {{ .Values.locust.runTime | quote }}
+        resources:
+          {{- toYaml .Values.locust.resources | nindent 10 }}
+{{- end }}

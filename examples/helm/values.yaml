@@ -247,7 +247,7 @@ httploaddirector:
 
 # JMeter Load Testing settings
 jmeter:
-  enabled: true
+  enabled: false
   backoffLimit: 0
   restartPolicy: Never
   image:
@@ -257,6 +257,37 @@ jmeter:
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"
+  numUsers: "10"
+  rampUp: "10"
+  duration: "300"
+  testPlan: "teastore_browse_nogui.jmx"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}
+
+# Locust Load Testing settings
+locust:
+  enabled: true
+  backoffLimit: 0
+  restartPolicy: Never
+  image:
+    repository: 10.10.10.240/library/teastore-locust
+    pullPolicy: Always
+    tag: "latest"
+  # Target WebUI service
+  targetHost: "teastore-webui"
+  targetPort: "8080"
+  # Number of concurrent users to simulate
+  users: "10"
+  # Rate at which users are spawned (users per second)
+  spawnRate: "1"
+  # How long to run the test (e.g., 5m, 1h, 300s)
+  runTime: "5m"
   resources:
     limits:
       cpu: 2000m

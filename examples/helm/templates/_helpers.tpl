@@ -101,3 +101,20 @@ app.kubernetes.io/component: jmeter
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/component: jmeter
 {{- end }}
+
+{{/*
+Locust helpers
+*/}}
+{{- define "teastore.locust.fullname" -}}
+{{- printf "%s-locust" (include "teastore.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "teastore.locust.labels" -}}
+{{ include "teastore.labels" . }}
+app.kubernetes.io/component: locust
+{{- end }}
+
+{{- define "teastore.locust.selectorLabels" -}}
+{{ include "teastore.selectorLabels" . }}
+app.kubernetes.io/component: locust
+{{- end }}
