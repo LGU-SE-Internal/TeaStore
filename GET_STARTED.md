@@ -18,6 +18,9 @@
          1. [Run JMeter™ with GUI](#2121-run-jmeter-with-gui)
          2. [Run JMeter™ with Command-Line](#2122-run-jmeter-with-command-line)
       3. [Locust](#213-locust)
+         1. [Run Locust Locally with Python](#2131-run-locust-locally-with-python)
+         2. [Run Locust with Docker](#2132-run-locust-with-docker)
+         3. [Run Locust with Kubernetes/Helm](#2133-run-locust-with-kuberneteshelm)
    2. [Instrumenting the TeaStore](#22-instrumenting-the-teastore)
       1. [Docker containers with Kieker](#221-docker-containers-with-kieker)
          1. [AMQP Logging](#2211-amqp-logging)
@@ -303,6 +306,8 @@ If the switch _-l_ is set, the results of the run are stored in the specified fi
 
 [Locust](https://github.com/locustio/locust) is an easy to use, scriptable and scalable performance testing tool written in Python.
 
+##### 2.1.3.1. Run Locust Locally with Python
+
 To use it with the Teastore, it has to be installed via Python pip:
 
 `pip install locust`
@@ -311,6 +316,49 @@ Go to the directory `example/locust` and start the GUI by executing the command 
 There you need to configure the host url of the Teastore webui, the number of simulated users and their spawn rate.
 
 Further instructions and information on e.g. customization and scripting are available in the [documentation](https://docs.locust.io/en/stable/index.html).
+
+##### 2.1.3.2. Run Locust with Docker
+
+A pre-built Docker image is available that packages Locust with the TeaStore test script:
+
+```bash
+docker run -e TARGET_HOST=http://teastore-webui:8080 \
+           -e USERS=10 \
+           -e SPAWN_RATE=1 \
+           -e RUN_TIME=5m \
+           descartesresearch/teastore-locust
+```
+
+To run with the web UI for interactive testing:
+
+```bash
+docker run -p 8089:8089 \
+           -e TARGET_HOST=http://teastore-webui:8080 \
+           descartesresearch/teastore-locust \
+           locust -f /locust/locustfile.py --host=http://teastore-webui:8080
+```
+
+##### 2.1.3.3. Run Locust with Kubernetes/Helm
+
+To deploy Locust as a Kubernetes Job using the Helm chart:
+
+```bash
+helm install teastore ./examples/helm \
+  --set locust.enabled=true \
+  --set locust.users=50 \
+  --set locust.spawnRate=5 \
+  --set locust.runTime=10m
+```
+
+The following parameters can be configured in `values.yaml`:
+- `locust.enabled`: Enable/disable the Locust job (default: `true`)
+- `locust.targetHost`: Target WebUI service hostname (default: `teastore-webui`)
+- `locust.targetPort`: Target WebUI service port (default: `8080`)
+- `locust.users`: Number of concurrent users to simulate (default: `10`)
+- `locust.spawnRate`: Rate at which users are spawned in users/second (default: `1`)
+- `locust.runTime`: Test duration (e.g., `5m`, `1h`, `300s`) (default: `5m`)
+
+For more details, see `utilities/tools.descartes.teastore.locust/README.md`.
 
 ### 2.2. Instrumenting the TeaStore
 
