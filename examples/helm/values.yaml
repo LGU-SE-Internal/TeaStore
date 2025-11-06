@@ -276,7 +276,7 @@ locust:
   replicaCount: 1
   image:
     repository: 10.10.10.240/library/teastore-locust
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: ""
   # Target WebUI service
   targetHost: "teastore-webui"

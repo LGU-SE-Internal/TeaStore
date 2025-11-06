@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: locust
-        image: "{{ .Values.locust.image.repository }}:{{ .Values.locust.image.tag }}"
+        image: "{{ .Values.locust.image.repository }}:{{ .Values.locust.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.locust.image.pullPolicy }}
         env:
         - name: TARGET_HOST

@@ -18,7 +18,7 @@ spec:
       restartPolicy: {{ .Values.jmeter.restartPolicy }}
       containers:
       - name: jmeter
-        image: "{{ .Values.jmeter.image.repository }}:{{ .Values.jmeter.image.tag }}"
+        image: "{{ .Values.jmeter.image.repository }}:{{ .Values.jmeter.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.jmeter.image.pullPolicy }}
         env:
         - name: HOSTNAME
