@@ -2,7 +2,7 @@
 <configuration>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-          <pattern>%d{HH:mm:ss.SSS} %-5level %logger{15}#%line TraceID: %X{traceId} SpanID: %X{spanId} %msg%n</pattern>
+          <pattern>%d{HH:mm:ss.SSS} %-5level %logger{15}#%line trace_id=%X{trace_id} span_id=%X{span_id} trace_flags=%X{trace_flags} %msg%n</pattern>
         </encoder>
     </appender>
 
