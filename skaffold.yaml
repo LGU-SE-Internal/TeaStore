@@ -1,0 +1,51 @@
+apiVersion: skaffold/v4beta9
+kind: Config
+metadata:
+  name: teastore
+build:
+  platforms: ["linux/amd64"]
+  local:
+    concurrency: 16
+    push: true
+    useDockerCLI: false
+  artifacts:
+    - image: teastore-webui
+      context: services/tools.descartes.teastore.webui
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-registry
+      context: services/tools.descartes.teastore.registry
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-db
+      context: utilities/tools.descartes.teastore.database
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-auth
+      context: services/tools.descartes.teastore.auth
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-image
+      context: services/tools.descartes.teastore.image
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-recommender
+      context: services/tools.descartes.teastore.recommender
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-persistence
+      context: services/tools.descartes.teastore.persistence
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-jmeter
+      context: utilities/tools.descartes.teastore.jmeter
+      docker:
+        dockerfile: Dockerfile
+    - image: teastore-httploadgen
+      context: utilities/tools.descartes.teastore.httploadgenerator
+      docker:
+        dockerfile: Dockerfile.loadgen
+    - image: teastore-httploaddirector
+      context: utilities/tools.descartes.teastore.httploadgenerator
+      docker:
+        dockerfile: Dockerfile.loadgen
