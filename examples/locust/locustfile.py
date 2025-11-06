@@ -1,7 +1,7 @@
+from locust import HttpUser, task
 import logging
 from random import randint, choice
 
-from locust import HttpUser, task
 
 # logging
 logging.getLogger().setLevel(logging.INFO)
