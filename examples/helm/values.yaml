@@ -3,7 +3,7 @@ webui:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-webui
+    repository: 10.10.10.240/library/teastore-webui
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -29,7 +29,7 @@ webui:
 registry:
   enabled: true
   image:
-    repository: descartesresearch/teastore-registry
+    repository: 10.10.10.240/library/teastore-registry
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -54,7 +54,7 @@ registry:
 db:
   enabled: true
   image:
-    repository: descartesresearch/teastore-db
+    repository: 10.10.10.240/library/teastore-db
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -80,7 +80,7 @@ auth:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-auth
+    repository: 10.10.10.240/library/teastore-auth
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -107,7 +107,7 @@ image:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-image
+    repository: 10.10.10.240/library/teastore-image
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -134,7 +134,7 @@ recommender:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-recommender
+    repository: 10.10.10.240/library/teastore-recommender
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -161,7 +161,7 @@ persistence:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-persistence
+    repository: 10.10.10.240/library/teastore-persistence
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
@@ -247,7 +247,7 @@ httploaddirector:
 
 # JMeter Load Testing settings
 jmeter:
-  enabled: true
+  enabled: false
   backoffLimit: 0
   restartPolicy: Never
   image:
@@ -257,6 +257,36 @@ jmeter:
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"
+  numUsers: "10"
+  rampUp: "10"
+  duration: "300"
+  testPlan: "teastore_browse_nogui.jmx"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}
+
+# Locust Load Testing settings
+locust:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: 10.10.10.240/library/teastore-locust
+    pullPolicy: IfNotPresent
+    tag: ""
+  # Target WebUI service
+  targetHost: "teastore-webui"
+  targetPort: "80"
+  # Number of concurrent users to simulate
+  users: "50"
+  # Rate at which users are spawned (users per second)
+  spawnRate: "5"
+  # How long to run the test (e.g., 5m, 1h, 300s). Leave empty for continuous running.
+  runTime: ""
   resources:
     limits:
       cpu: 2000m

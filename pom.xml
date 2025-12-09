@@ -31,6 +31,23 @@
 		<module>services/tools.descartes.teastore.webui</module>
 		<module>./utilities/tools.descartes.teastore.docker.all</module>
 	</modules>
+	<dependencies>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-access</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<pluginManagement>

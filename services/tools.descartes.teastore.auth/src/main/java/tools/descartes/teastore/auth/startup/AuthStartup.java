@@ -18,11 +18,12 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 
-import io.opentracing.util.GlobalTracer;
+// OpenTracing imports commented out for OpenTelemetry compatibility
+// import io.opentracing.util.GlobalTracer;
 import tools.descartes.teastore.registryclient.RegistryClient;
 import tools.descartes.teastore.registryclient.Service;
 import tools.descartes.teastore.registryclient.loadbalancers.ServiceLoadBalancer;
-import tools.descartes.teastore.registryclient.tracing.Tracing;
+// import tools.descartes.teastore.registryclient.tracing.Tracing;
 import tools.descartes.teastore.registryclient.util.RESTClient;
 
 /**
@@ -62,7 +63,9 @@ public class AuthStartup implements ServletContextListener {
    * @param event The servlet context event at initialization.
    */
   public void contextInitialized(ServletContextEvent event) {
-    GlobalTracer.register(Tracing.init(Service.AUTH.getServiceName()));
+    // OpenTracing GlobalTracer registration disabled for OpenTelemetry auto-instrumentation compatibility
+    // The OTel Java agent will automatically handle tracing
+    // GlobalTracer.register(Tracing.init(Service.AUTH.getServiceName()));
     RESTClient.setGlobalReadTimeout(REST_READ_TIMOUT);
     ServiceLoadBalancer.preInitializeServiceLoadBalancers(Service.PERSISTENCE);
     RegistryClient.getClient().register(event.getServletContext().getContextPath());

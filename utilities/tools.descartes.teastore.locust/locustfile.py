@@ -1,14 +1,13 @@
-from locust import HttpUser, task
 import logging
-from random import randint, choice
+from random import choice, randint
 
+from locust import HttpUser, task
 
 # logging
 logging.getLogger().setLevel(logging.INFO)
 
 
 class UserBehavior(HttpUser):
-
     @task
     def load(self) -> None:
         """
@@ -33,7 +32,7 @@ class UserBehavior(HttpUser):
         :return: None
         """
         # load landing page
-        res = self.client.get('/')
+        res = self.client.get("/")
         if res.ok:
             logging.info("Loaded landing page.")
         else:
@@ -45,19 +44,22 @@ class UserBehavior(HttpUser):
         :return: categories
         """
         # load login page
-        res = self.client.get('/login')
+        res = self.client.get("/login")
         if res.ok:
             logging.info("Loaded login page.")
         else:
             logging.error(f"Could not load login page: {res.status_code}")
         # login random user
         user = randint(1, 99)
-        login_request = self.client.post("/loginAction", params={"username": user, "password": "password"})
+        login_request = self.client.post(
+            "/loginAction", params={"username": user, "password": "password"}
+        )
         if login_request.ok:
             logging.info(f"Login with username: {user}")
         else:
             logging.error(
-                f"Could not login with username: {user} - status: {login_request.status_code}")
+                f"Could not login with username: {user} - status: {login_request.status_code}"
+            )
 
     def browse(self) -> None:
         """
@@ -69,7 +71,9 @@ class UserBehavior(HttpUser):
             # browses random category and page
             category_id = randint(2, 6)
             page = randint(1, 5)
-            category_request = self.client.get("/category", params={"page": page, "category": category_id})
+            category_request = self.client.get(
+                "/category", params={"page": page, "category": category_id}
+            )
             if category_request.ok:
                 logging.info(f"Visited category {category_id} on page 1")
                 # browses random product
@@ -77,18 +81,23 @@ class UserBehavior(HttpUser):
                 product_request = self.client.get("/product", params={"id": product_id})
                 if product_request.ok:
                     logging.info(f"Visited product with id {product_id}.")
-                    cart_request = self.client.post("/cartAction", params={"addToCart": "", "productid": product_id})
+                    cart_request = self.client.post(
+                        "/cartAction", params={"addToCart": "", "productid": product_id}
+                    )
                     if cart_request.ok:
                         logging.info(f"Added product {product_id} to cart.")
                     else:
                         logging.error(
-                            f"Could not put product {product_id} in cart - status {cart_request.status_code}")
+                            f"Could not put product {product_id} in cart - status {cart_request.status_code}"
+                        )
                 else:
                     logging.error(
-                        f"Could not visit product {product_id} - status {product_request.status_code}")
+                        f"Could not visit product {product_id} - status {product_request.status_code}"
+                    )
             else:
                 logging.error(
-                    f"Could not visit category {category_id} on page 1 - status {category_request.status_code}")
+                    f"Could not visit category {category_id} on page 1 - status {category_request.status_code}"
+                )
 
     def buy(self) -> None:
         """
@@ -104,11 +113,11 @@ class UserBehavior(HttpUser):
             "cardtype": "volvo",
             "cardnumber": "314159265359",
             "expirydate": "12/2050",
-            "confirm": "Confirm"
+            "confirm": "Confirm",
         }
         buy_request = self.client.post("/cartAction", params=user_data)
         if buy_request.ok:
-            logging.info(f"Bought products.")
+            logging.info("Bought products.")
         else:
             logging.error("Could not buy products.")
 
