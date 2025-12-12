@@ -37,6 +37,9 @@
         <appender-ref ref="OpenTelemetry"/>
     </root>
 
+    <!-- Set DEBUG level for TeaStore packages to enable request logging -->
+    <logger name="tools.descartes.teastore" level="DEBUG"/>
+
     <!-- Reduce noise from some verbose loggers -->
     <logger name="com.netflix" level="WARN"/>
     <logger name="org.eclipse.persistence" level="WARN"/>

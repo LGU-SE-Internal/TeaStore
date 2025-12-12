@@ -96,8 +96,9 @@ public final class Tracing {
    * span_id are automatically attached to the log record.
    *
    * <p>For auto-instrumentation (Java agent or Kubernetes operator), the SDK is configured
-   * automatically. For manual SDK usage, configure the SDK using AutoConfiguredOpenTelemetrySdk
-   * or programmatic configuration before calling this method.
+   * automatically and the agent also handles appender installation. For manual SDK usage, 
+   * configure the SDK using AutoConfiguredOpenTelemetrySdk or programmatic configuration 
+   * before calling this method.
    *
    * @param service is usually the name of the service
    */
@@ -113,7 +114,15 @@ public final class Tracing {
           // emitted within an active span, the trace_id and span_id are automatically
           // attached to the log record without needing manual MDC management.
           // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
-          OpenTelemetryAppender.install(openTelemetry);
+          //
+          // Note: When using auto-instrumentation (Java agent), the agent may already
+          // handle log correlation. This call is safe and will work in both scenarios.
+          try {
+            OpenTelemetryAppender.install(openTelemetry);
+          } catch (IllegalStateException e) {
+            // Appender might already be installed by auto-instrumentation agent
+            // This is expected when running with the Java agent
+          }
           
           initialized = true;
         }

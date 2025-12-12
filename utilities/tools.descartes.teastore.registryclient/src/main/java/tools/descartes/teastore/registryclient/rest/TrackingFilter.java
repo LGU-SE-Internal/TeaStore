@@ -72,6 +72,16 @@ public class TrackingFilter implements Filter {
       if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
         MDC.put(MDC_TRACE_ID, currentSpan.getSpanContext().getTraceId());
         MDC.put(MDC_SPAN_ID, currentSpan.getSpanContext().getSpanId());
+        
+        // Log request with trace context for debugging log-trace correlation
+        if (LOG.isDebugEnabled()) {
+          HttpServletRequest httpRequest = (HttpServletRequest) request;
+          LOG.debug("Processing request: {} {} trace_id={} span_id={}",
+              httpRequest.getMethod(),
+              httpRequest.getRequestURI(),
+              currentSpan.getSpanContext().getTraceId(),
+              currentSpan.getSpanContext().getSpanId());
+        }
       }
 
       try {
