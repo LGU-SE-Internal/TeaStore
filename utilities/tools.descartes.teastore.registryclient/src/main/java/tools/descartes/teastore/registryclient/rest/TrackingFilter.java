@@ -97,6 +97,7 @@ public class TrackingFilter implements Filter {
             LOG.debug("No monitoring data found in the incoming request header");
             traceId = CF_REGISTRY.getAndStoreUniqueThreadLocalTraceId();
             CF_REGISTRY.storeThreadLocalEOI(0);
+            // ESS is set to 1 because the next operation will be ess + 1
             CF_REGISTRY.storeThreadLocalESS(1);
             eoi = 0;
             ess = 0;

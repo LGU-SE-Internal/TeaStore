@@ -25,6 +25,11 @@ import io.opentelemetry.context.propagation.TextMapSetter;
  */
 public final class Tracing {
 
+  /**
+   * Instrumentation library version for OpenTelemetry tracer.
+   */
+  private static final String INSTRUMENTATION_VERSION = "1.0.0";
+
   private static volatile Tracer tracer;
   private static volatile boolean initialized = false;
 
@@ -76,7 +81,7 @@ public final class Tracing {
     if (!initialized) {
       synchronized (Tracing.class) {
         if (!initialized) {
-          tracer = GlobalOpenTelemetry.getTracer(service, "1.0.0");
+          tracer = GlobalOpenTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
           initialized = true;
         }
       }
