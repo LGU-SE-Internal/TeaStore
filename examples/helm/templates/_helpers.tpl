@@ -70,7 +70,7 @@ HTTP Load Generator helpers
 
 {{- define "teastore.httploadgen.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
-app.kubernetes.io/component: httploadgen
+app.kubernetes.io/component: teastore-httploadgen
 {{- end }}
 
 {{/*
@@ -82,7 +82,7 @@ HTTP Load Director helpers
 
 {{- define "teastore.httploaddirector.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
-app.kubernetes.io/component: httploaddirector
+app.kubernetes.io/component: teastore-httploaddirector
 {{- end }}
 
 {{/*
@@ -94,10 +94,10 @@ JMeter helpers
 
 {{- define "teastore.jmeter.labels" -}}
 {{ include "teastore.labels" . }}
-app.kubernetes.io/component: jmeter
+app.kubernetes.io/component: teastore-jmeter
 {{- end }}
 
 {{- define "teastore.jmeter.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
-app.kubernetes.io/component: jmeter
+app.kubernetes.io/component: teastore-jmeter
 {{- end }}
