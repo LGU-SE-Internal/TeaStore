@@ -1,12 +1,17 @@
 clientside_loadbalancer: true # Deploys as Statefulset which enables communication to every instance individually. A kubernetes service is used otherwise
+
+# Container Registry configuration
+# Change this to your private registry
+containerRegistry: &registry "10.10.10.240/library"
+
 webui:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-webui
+    repository: 10.10.10.240/library/teastore-webui
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -29,10 +34,10 @@ webui:
 registry:
   enabled: true
   image:
-    repository: descartesresearch/teastore-registry
+    repository: 10.10.10.240/library/teastore-registry
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -54,10 +59,10 @@ registry:
 db:
   enabled: true
   image:
-    repository: descartesresearch/teastore-db
+    repository: 10.10.10.240/library/teastore-db
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -80,10 +85,10 @@ auth:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-auth
+    repository: 10.10.10.240/library/teastore-auth
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -107,10 +112,10 @@ image:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-image
+    repository: 10.10.10.240/library/teastore-image
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -134,10 +139,10 @@ recommender:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-recommender
+    repository: 10.10.10.240/library/teastore-recommender
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -161,10 +166,10 @@ persistence:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-persistence
+    repository: 10.10.10.240/library/teastore-persistence
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "latest"
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
