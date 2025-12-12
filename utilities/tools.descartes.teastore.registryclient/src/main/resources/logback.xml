@@ -2,6 +2,9 @@
 <!--
   Logback configuration with OpenTelemetry appender for trace/log correlation.
   Logs are sent to OTEL Collector via OTLP along with trace context (trace_id, span_id).
+  
+  This configuration follows the pattern from:
+  https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
 -->
 <configuration>
     <!-- Console appender with trace context -->
@@ -12,23 +15,20 @@
     </appender>
 
     <!-- OpenTelemetry appender for sending logs via OTLP -->
-    <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
-        <!-- Capture MDC attributes -->
-        <captureMdcAttributes>*</captureMdcAttributes>
-        <!-- Capture code attributes (file, line, method) -->
-        <captureCodeAttributes>true</captureCodeAttributes>
-        <!-- Capture marker attributes -->
-        <captureMarkerAttribute>true</captureMarkerAttribute>
-        <!-- Capture key-value pair attributes -->
+    <appender name="OpenTelemetry"
+              class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <!-- Capture experimental attributes like thread info, code location -->
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <!-- Capture key-value pair attributes from structured logging -->
         <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
-        <!-- Capture logger context attributes -->
-        <captureLoggerContext>true</captureLoggerContext>
+        <!-- Capture MDC attributes for trace correlation -->
+        <captureMdcAttributes>*</captureMdcAttributes>
     </appender>
 
     <!-- Root logger configuration -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="OTEL"/>
+        <appender-ref ref="OpenTelemetry"/>
     </root>
 
     <!-- Reduce noise from some verbose loggers -->

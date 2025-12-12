@@ -21,6 +21,11 @@ import io.opentelemetry.context.propagation.TextMapSetter;
  * Utility functions for OpenTelemetry integration.
  * Migrated from OpenTracing/Jaeger to OpenTelemetry SDK.
  *
+ * <p>This implementation is designed to work with OpenTelemetry auto-instrumentation
+ * (Java agent or Kubernetes operator), which configures the SDK via environment variables.
+ * When running without auto-instrumentation, the SDK should be configured programmatically
+ * or using the autoconfigure module.
+ *
  * @author Long Bui
  */
 public final class Tracing {
@@ -75,6 +80,10 @@ public final class Tracing {
    * When using OpenTelemetry auto-instrumentation or SDK configuration via environment variables,
    * this method uses GlobalOpenTelemetry to get the tracer.
    *
+   * <p>For auto-instrumentation (Java agent or Kubernetes operator), the SDK is configured
+   * automatically. For manual SDK usage, configure the SDK using AutoConfiguredOpenTelemetrySdk
+   * or programmatic configuration before calling this method.
+   *
    * @param service is usually the name of the service
    */
   public static void init(String service) {
@@ -122,7 +131,7 @@ public final class Tracing {
    * @param request is the HttpServletRequest instance with the potential span
    *                information
    * @return Scope containing the extracted span marked as active. Can be used
-   *         with try-with-resource construct
+   *         with try-with-resource construct. The span is automatically ended when closed.
    */
   public static Scope extractCurrentSpan(HttpServletRequest request) {
     Map<String, String> headers = new HashMap<>();
@@ -139,7 +148,7 @@ public final class Tracing {
    * @param httpHeaders is the HttpHeaders instance with the potential span
    *                    information
    * @return Scope containing the extracted span marked as active. Can be used
-   *         with try-with-resource construct
+   *         with try-with-resource construct. The span is automatically ended when closed.
    */
   public static Scope extractCurrentSpan(HttpHeaders httpHeaders) {
     Map<String, String> headers = new HashMap<>();
@@ -156,7 +165,7 @@ public final class Tracing {
    * @param headers is the Map of the processed headers
    * @param operationName is the operation name of the span (can be either URL or URI)
    * @return Scope containing the extracted span marked as active. Can be used
-   *         with try-with-resource construct
+   *         with try-with-resource construct. The span is automatically ended when closed.
    */
   private static Scope buildSpanFromHeaders(Map<String, String> headers, String operationName) {
     // Extract context from incoming headers
@@ -169,8 +178,9 @@ public final class Tracing {
         .setSpanKind(SpanKind.SERVER)
         .startSpan();
 
-    // Make the span active and return the scope
-    return span.makeCurrent();
+    // Make the span active and return a wrapper scope that ends the span when closed
+    Scope scope = span.makeCurrent();
+    return new SpanEndingScope(scope, span);
   }
 
   /**
@@ -197,5 +207,52 @@ public final class Tracing {
       return span.getSpanContext().getSpanId();
     }
     return null;
+  }
+
+  /**
+   * A wrapper Scope that ends the span when closed.
+   * This ensures spans are properly ended when used with try-with-resources.
+   *
+   * <p>This class is designed to be used in a single-threaded context within request processing.
+   * The scope and span should only be closed once, and only by the thread that created them.
+   *
+   * <p>Usage example:
+   * <pre>{@code
+   * try (Scope scope = Tracing.extractCurrentSpan(request)) {
+   *     // Process request - span is active here
+   * }
+   * // Scope is closed, span is ended
+   * }</pre>
+   */
+  private static class SpanEndingScope implements Scope {
+    private final Scope delegate;
+    private final Span span;
+
+    /**
+     * Creates a new SpanEndingScope.
+     *
+     * @param delegate the underlying scope to delegate close() to (must not be null)
+     * @param span the span to end when this scope is closed (must not be null)
+     * @throws NullPointerException if delegate or span is null
+     */
+    SpanEndingScope(Scope delegate, Span span) {
+      if (delegate == null) {
+        throw new NullPointerException("delegate scope must not be null");
+      }
+      if (span == null) {
+        throw new NullPointerException("span must not be null");
+      }
+      this.delegate = delegate;
+      this.span = span;
+    }
+
+    @Override
+    public void close() {
+      try {
+        delegate.close();
+      } finally {
+        span.end();
+      }
+    }
   }
 }
