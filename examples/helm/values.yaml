@@ -194,6 +194,19 @@ opentelemetry:
   instrumentationName: "opentelemetry-kube-stack"
   # The namespace where OpenTelemetry Instrumentation resource is deployed
   monitoringNamespace: "monitoring"
+  # OTLP exporter endpoint for traces and logs
+  # This should point to your OTEL Collector service
+  otlpEndpoint: "http://otel-collector.monitoring.svc.cluster.local:4317"
+  # OTLP protocol: grpc or http/protobuf
+  otlpProtocol: "grpc"
+  # Enable logs export via OTLP
+  logsExporterEnabled: true
+  # Enable traces export via OTLP
+  tracesExporterEnabled: true
+  # Enable metrics export via OTLP
+  metricsExporterEnabled: true
+  # Sampling ratio (1.0 = 100% sampling)
+  samplingRatio: "1.0"
 
 # HTTP Load Generator settings
 httploadgen:

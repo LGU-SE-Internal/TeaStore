@@ -21,7 +21,6 @@ import jakarta.servlet.annotation.WebListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.opentracing.util.GlobalTracer;
 import tools.descartes.teastore.registryclient.RegistryClient;
 import tools.descartes.teastore.registryclient.Service;
 import tools.descartes.teastore.registryclient.loadbalancers.ServiceLoadBalancer;
@@ -67,7 +66,7 @@ public class RecommenderStartup implements ServletContextListener {
 	 *            The servlet context event at initialization.
 	 */
 	public void contextInitialized(ServletContextEvent event) {
-		GlobalTracer.register(Tracing.init(Service.RECOMMENDER.getServiceName()));
+		Tracing.init(Service.RECOMMENDER.getServiceName());
 		RESTClient.setGlobalReadTimeout(REST_READ_TIMOUT);
 		ServiceLoadBalancer.preInitializeServiceLoadBalancers(Service.PERSISTENCE);
 		RegistryClient.getClient().runAfterServiceIsAvailable(Service.PERSISTENCE, () -> {

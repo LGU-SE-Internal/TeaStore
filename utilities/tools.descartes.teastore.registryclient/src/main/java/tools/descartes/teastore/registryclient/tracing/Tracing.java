@@ -2,46 +2,98 @@ package tools.descartes.teastore.registryclient.tracing;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.HttpHeaders;
 
-import io.jaegertracing.internal.JaegerTracer;
-import io.jaegertracing.internal.propagation.B3TextMapCodec;
-import io.jaegertracing.internal.samplers.ConstSampler;
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMap;
-import io.opentracing.propagation.TextMapExtractAdapter;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapSetter;
 
 /**
- * Utility functions for OpenTracing integration.
+ * Utility functions for OpenTelemetry integration.
+ * Migrated from OpenTracing/Jaeger to OpenTelemetry SDK.
  *
  * @author Long Bui
  */
 public final class Tracing {
+
+  private static volatile Tracer tracer;
+  private static volatile boolean initialized = false;
+
   private Tracing() {
   }
 
   /**
-   * This function is used to create an Tracer instance to be used as the
-   * GlobalTracer.
+   * TextMapGetter for extracting context from HTTP headers.
+   */
+  private static final TextMapGetter<Map<String, String>> TEXT_MAP_GETTER =
+      new TextMapGetter<Map<String, String>>() {
+        @Override
+        public Iterable<String> keys(Map<String, String> carrier) {
+          return carrier.keySet();
+        }
+
+        @Override
+        public String get(Map<String, String> carrier, String key) {
+          if (carrier == null) {
+            return null;
+          }
+          // Headers are case-insensitive, try both cases
+          String value = carrier.get(key);
+          if (value == null) {
+            value = carrier.get(key.toLowerCase());
+          }
+          return value;
+        }
+      };
+
+  /**
+   * TextMapSetter for injecting context into request headers.
+   */
+  private static final TextMapSetter<Invocation.Builder> TEXT_MAP_SETTER =
+      (carrier, key, value) -> {
+        if (carrier != null) {
+          carrier.header(key, value);
+        }
+      };
+
+  /**
+   * Initialize the OpenTelemetry tracer for the service.
+   * When using OpenTelemetry auto-instrumentation or SDK configuration via environment variables,
+   * this method uses GlobalOpenTelemetry to get the tracer.
    *
    * @param service is usually the name of the service
-   * @return Tracer intended to be used as GlobalTracer
    */
-  public static Tracer init(String service) {
-    return new JaegerTracer.Builder(service).withSampler(new ConstSampler(true)).withZipkinSharedRpcSpan()
-        .registerInjector(Format.Builtin.HTTP_HEADERS, new B3TextMapCodec.Builder().build())
-        .registerExtractor(Format.Builtin.HTTP_HEADERS, new B3TextMapCodec.Builder().build()).build();
+  public static void init(String service) {
+    if (!initialized) {
+      synchronized (Tracing.class) {
+        if (!initialized) {
+          tracer = GlobalOpenTelemetry.getTracer(service, "1.0.0");
+          initialized = true;
+        }
+      }
+    }
+  }
+
+  /**
+   * Get the current tracer instance.
+   *
+   * @return the OpenTelemetry Tracer
+   */
+  public static Tracer getTracer() {
+    if (!initialized) {
+      // Fallback initialization if not already done
+      init("teastore");
+    }
+    return tracer;
   }
 
   /**
@@ -51,10 +103,10 @@ public final class Tracing {
    * @param requestBuilder The requestBuilder object that gets injected
    */
   public static void inject(Invocation.Builder requestBuilder) {
-    Span activeSpan = GlobalTracer.get().activeSpan();
-    if (activeSpan != null) {
-      GlobalTracer.get().inject(activeSpan.context(), Format.Builtin.HTTP_HEADERS,
-          Tracing.requestBuilderCarrier(requestBuilder));
+    Span currentSpan = Span.current();
+    if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
+      GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
+          .inject(Context.current(), requestBuilder, TEXT_MAP_SETTER);
     }
   }
 
@@ -62,15 +114,15 @@ public final class Tracing {
    * Overloaded function used to extract span information out of an
    * HttpServletRequest instance.
    *
-   * @param request is the HttpServletRequest isntance with the potential span
-   *                informations
+   * @param request is the HttpServletRequest instance with the potential span
+   *                information
    * @return Scope containing the extracted span marked as active. Can be used
    *         with try-with-resource construct
    */
   public static Scope extractCurrentSpan(HttpServletRequest request) {
     Map<String, String> headers = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
-      headers.put(headerName, request.getHeader(headerName));
+      headers.put(headerName.toLowerCase(), request.getHeader(headerName));
     }
     return buildSpanFromHeaders(headers, request.getRequestURI());
   }
@@ -80,14 +132,14 @@ public final class Tracing {
    * instance.
    *
    * @param httpHeaders is the HttpHeaders instance with the potential span
-   *                    informations
+   *                    information
    * @return Scope containing the extracted span marked as active. Can be used
    *         with try-with-resource construct
    */
   public static Scope extractCurrentSpan(HttpHeaders httpHeaders) {
     Map<String, String> headers = new HashMap<>();
     for (String headerName : httpHeaders.getRequestHeaders().keySet()) {
-      headers.put(headerName, httpHeaders.getRequestHeader(headerName).get(0));
+      headers.put(headerName.toLowerCase(), httpHeaders.getRequestHeader(headerName).get(0));
     }
     return buildSpanFromHeaders(headers, "op");
   }
@@ -102,37 +154,43 @@ public final class Tracing {
    *         with try-with-resource construct
    */
   private static Scope buildSpanFromHeaders(Map<String, String> headers, String operationName) {
-    Tracer.SpanBuilder spanBuilder = GlobalTracer.get().buildSpan(operationName);
-    try {
-      SpanContext parentSpanCtx = GlobalTracer.get().extract(Format.Builtin.HTTP_HEADERS,
-              new TextMapExtractAdapter(headers));
-      if (parentSpanCtx != null) {
-        spanBuilder = spanBuilder.asChildOf(parentSpanCtx);
-      }
-    } catch (IllegalArgumentException e) {
-      e.printStackTrace();
-    }
-    return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT).startActive(true);
+    // Extract context from incoming headers
+    Context extractedContext = GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
+        .extract(Context.current(), headers, TEXT_MAP_GETTER);
+
+    // Start a new span as child of extracted context
+    Span span = getTracer().spanBuilder(operationName)
+        .setParent(extractedContext)
+        .setSpanKind(SpanKind.SERVER)
+        .startSpan();
+
+    // Make the span active and return the scope
+    return span.makeCurrent();
   }
 
   /**
-   * Returns a TextMap Adapter for Invocation.Builder instance.
+   * Get the current trace ID from the active span.
    *
-   * @param builder is the construct where the span information should be injected
-   *                to
-   * @return the TextMap adapter which can be used for injection
+   * @return the trace ID or null if no active span
    */
-  public static TextMap requestBuilderCarrier(final Invocation.Builder builder) {
-    return new TextMap() {
-      @Override
-      public Iterator<Map.Entry<String, String>> iterator() {
-        throw new UnsupportedOperationException("carrier is write-only");
-      }
+  public static String getCurrentTraceId() {
+    Span span = Span.current();
+    if (span != null && span.getSpanContext().isValid()) {
+      return span.getSpanContext().getTraceId();
+    }
+    return null;
+  }
 
-      @Override
-      public void put(String key, String value) {
-        builder.header(key, value);
-      }
-    };
+  /**
+   * Get the current span ID from the active span.
+   *
+   * @return the span ID or null if no active span
+   */
+  public static String getCurrentSpanId() {
+    Span span = Span.current();
+    if (span != null && span.getSpanContext().isValid()) {
+      return span.getSpanContext().getSpanId();
+    }
+    return null;
   }
 }

@@ -18,7 +18,6 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 
-import io.opentracing.util.GlobalTracer;
 import tools.descartes.teastore.registryclient.RegistryClient;
 import tools.descartes.teastore.registryclient.Service;
 import tools.descartes.teastore.registryclient.loadbalancers.ServiceLoadBalancer;
@@ -62,7 +61,7 @@ public class AuthStartup implements ServletContextListener {
    * @param event The servlet context event at initialization.
    */
   public void contextInitialized(ServletContextEvent event) {
-    GlobalTracer.register(Tracing.init(Service.AUTH.getServiceName()));
+    Tracing.init(Service.AUTH.getServiceName());
     RESTClient.setGlobalReadTimeout(REST_READ_TIMOUT);
     ServiceLoadBalancer.preInitializeServiceLoadBalancers(Service.PERSISTENCE);
     RegistryClient.getClient().register(event.getServletContext().getContextPath());

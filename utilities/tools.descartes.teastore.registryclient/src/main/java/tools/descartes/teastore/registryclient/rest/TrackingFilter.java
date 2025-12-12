@@ -12,9 +12,11 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import io.opentracing.Scope;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import kieker.common.record.controlflow.OperationExecutionRecord;
 import kieker.monitoring.core.controller.IMonitoringController;
 import kieker.monitoring.core.controller.MonitoringController;
@@ -24,6 +26,7 @@ import tools.descartes.teastore.registryclient.tracing.Tracing;
 
 /**
  * Servlet filter for request tracking.
+ * Supports both OpenTelemetry tracing and Kieker monitoring.
  *
  * @author Simon
  *
@@ -38,6 +41,10 @@ public class TrackingFilter implements Filter {
   private static final SessionRegistry SESSION_REGISTRY = SessionRegistry.INSTANCE;
   private static final String HEADER_FIELD = "KiekerTracingInfo";
 
+  // MDC keys for log correlation
+  private static final String MDC_TRACE_ID = "trace_id";
+  private static final String MDC_SPAN_ID = "span_id";
+
   /**
    * empty initialization method.
    *
@@ -49,7 +56,7 @@ public class TrackingFilter implements Filter {
   }
 
   /**
-   * Filter method that appends tracking id.
+   * Filter method that appends tracking id and sets up OpenTelemetry context.
    *
    * @param request  request
    * @param response response
@@ -60,98 +67,105 @@ public class TrackingFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     try (Scope scope = Tracing.extractCurrentSpan((HttpServletRequest) request)) {
-      if (!CTRLINST.isMonitoringEnabled()) {
-        chain.doFilter(request, response);
-        return;
+      // Set MDC for log correlation with OpenTelemetry trace context
+      Span currentSpan = Span.current();
+      if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
+        MDC.put(MDC_TRACE_ID, currentSpan.getSpanContext().getTraceId());
+        MDC.put(MDC_SPAN_ID, currentSpan.getSpanContext().getSpanId());
       }
-      if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
-        String url = ((HttpServletRequest) request).getRequestURL().toString();
-        if (url.contains("webui")) {
+
+      try {
+        if (!CTRLINST.isMonitoringEnabled()) {
           chain.doFilter(request, response);
           return;
         }
-        HttpServletRequest req = (HttpServletRequest) request;
-        String sessionId = SESSION_REGISTRY.recallThreadLocalSessionId();
-        long traceId = -1L;
-        int eoi;
-        int ess;
-
-        final String operationExecutionHeader = req.getHeader(HEADER_FIELD);
-
-        if ((operationExecutionHeader == null) || (operationExecutionHeader.equals(""))) {
-          LOG.debug("No monitoring data found in the incoming request header");
-          // LOG.info("Will continue without sending back reponse header");
-          traceId = CF_REGISTRY.getAndStoreUniqueThreadLocalTraceId();
-          CF_REGISTRY.storeThreadLocalEOI(0);
-          CF_REGISTRY.storeThreadLocalESS(1); // next operation is ess + 1
-          eoi = 0;
-          ess = 0;
-        } else {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Received request: " + req.getMethod() + "with header = " + operationExecutionHeader);
+        if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
+          String url = ((HttpServletRequest) request).getRequestURL().toString();
+          if (url.contains("webui")) {
+            chain.doFilter(request, response);
+            return;
           }
-          final String[] headerArray = operationExecutionHeader.split(",");
+          HttpServletRequest req = (HttpServletRequest) request;
+          String sessionId = SESSION_REGISTRY.recallThreadLocalSessionId();
+          long traceId = -1L;
+          int eoi;
+          int ess;
 
-          // Extract session id
-          sessionId = headerArray[1];
-          if ("null".equals(sessionId)) {
-            sessionId = OperationExecutionRecord.NO_SESSION_ID;
-          }
+          final String operationExecutionHeader = req.getHeader(HEADER_FIELD);
 
-          // Extract EOI
-          final String eoiStr = headerArray[2];
-          eoi = -1;
-          try {
-            eoi = Integer.parseInt(eoiStr);
-          } catch (final NumberFormatException exc) {
-            LOG.warn("Invalid eoi", exc);
-          }
-
-          // Extract ESS
-          final String essStr = headerArray[3];
-          ess = -1;
-          try {
-            ess = Integer.parseInt(essStr);
-          } catch (final NumberFormatException exc) {
-            LOG.warn("Invalid ess", exc);
-          }
-
-          // Extract trace id
-          final String traceIdStr = headerArray[0];
-          if (traceIdStr != null) {
-            try {
-              traceId = Long.parseLong(traceIdStr);
-            } catch (final NumberFormatException exc) {
-              LOG.warn("Invalid trace id", exc);
-            }
+          if ((operationExecutionHeader == null) || (operationExecutionHeader.equals(""))) {
+            LOG.debug("No monitoring data found in the incoming request header");
+            traceId = CF_REGISTRY.getAndStoreUniqueThreadLocalTraceId();
+            CF_REGISTRY.storeThreadLocalEOI(0);
+            CF_REGISTRY.storeThreadLocalESS(1);
+            eoi = 0;
+            ess = 0;
           } else {
-            traceId = CF_REGISTRY.getUniqueTraceId();
-            sessionId = SESSION_ID_ASYNC_TRACE;
-            eoi = 0; // EOI of this execution
-            ess = 0; // ESS of this execution
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Received request: " + req.getMethod() + "with header = " + operationExecutionHeader);
+            }
+            final String[] headerArray = operationExecutionHeader.split(",");
+
+            sessionId = headerArray[1];
+            if ("null".equals(sessionId)) {
+              sessionId = OperationExecutionRecord.NO_SESSION_ID;
+            }
+
+            final String eoiStr = headerArray[2];
+            eoi = -1;
+            try {
+              eoi = Integer.parseInt(eoiStr);
+            } catch (final NumberFormatException exc) {
+              LOG.warn("Invalid eoi", exc);
+            }
+
+            final String essStr = headerArray[3];
+            ess = -1;
+            try {
+              ess = Integer.parseInt(essStr);
+            } catch (final NumberFormatException exc) {
+              LOG.warn("Invalid ess", exc);
+            }
+
+            final String traceIdStr = headerArray[0];
+            if (traceIdStr != null) {
+              try {
+                traceId = Long.parseLong(traceIdStr);
+              } catch (final NumberFormatException exc) {
+                LOG.warn("Invalid trace id", exc);
+              }
+            } else {
+              traceId = CF_REGISTRY.getUniqueTraceId();
+              sessionId = SESSION_ID_ASYNC_TRACE;
+              eoi = 0;
+              ess = 0;
+            }
+
+            CF_REGISTRY.storeThreadLocalTraceId(traceId);
+            CF_REGISTRY.storeThreadLocalEOI(eoi);
+            CF_REGISTRY.storeThreadLocalESS(ess);
+            SESSION_REGISTRY.storeThreadLocalSessionId(sessionId);
           }
 
-          // Store thread-local values
-          CF_REGISTRY.storeThreadLocalTraceId(traceId);
-          CF_REGISTRY.storeThreadLocalEOI(eoi);
-          CF_REGISTRY.storeThreadLocalESS(ess);
-          SESSION_REGISTRY.storeThreadLocalSessionId(sessionId);
+        } else {
+          LOG.error("Something went wrong");
         }
+        CharResponseWrapper wrappedResponse = new CharResponseWrapper((HttpServletResponse) response);
+        PrintWriter out = response.getWriter();
 
-      } else {
-        LOG.error("Something went wrong");
+        chain.doFilter(request, wrappedResponse);
+
+        String sessionId = SESSION_REGISTRY.recallThreadLocalSessionId();
+        long traceId = CF_REGISTRY.recallThreadLocalTraceId();
+        int eoi = CF_REGISTRY.recallThreadLocalEOI();
+        wrappedResponse.addHeader(HEADER_FIELD,
+            traceId + "," + sessionId + "," + (eoi) + "," + Integer.toString(CF_REGISTRY.recallThreadLocalESS()));
+        out.write(wrappedResponse.toString());
+      } finally {
+        // Clean up MDC
+        MDC.remove(MDC_TRACE_ID);
+        MDC.remove(MDC_SPAN_ID);
       }
-      CharResponseWrapper wrappedResponse = new CharResponseWrapper((HttpServletResponse) response);
-      PrintWriter out = response.getWriter();
-
-      chain.doFilter(request, wrappedResponse);
-
-      String sessionId = SESSION_REGISTRY.recallThreadLocalSessionId();
-      long traceId = CF_REGISTRY.recallThreadLocalTraceId();
-      int eoi = CF_REGISTRY.recallThreadLocalEOI();
-      wrappedResponse.addHeader(HEADER_FIELD,
-          traceId + "," + sessionId + "," + (eoi) + "," + Integer.toString(CF_REGISTRY.recallThreadLocalESS()));
-      out.write(wrappedResponse.toString());
     }
   }
 

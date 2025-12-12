@@ -39,6 +39,8 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            {{- include "teastore.otel.envVars" . | nindent 12 }}
           resources:
             {{- toYaml .Values.registry.resources | nindent 12 }}
       {{- with .Values.registry.nodeSelector }}

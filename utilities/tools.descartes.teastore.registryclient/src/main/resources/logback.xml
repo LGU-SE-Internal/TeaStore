@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logback configuration with OpenTelemetry appender for trace/log correlation.
+  Logs are sent to OTEL Collector via OTLP along with trace context (trace_id, span_id).
+-->
+<configuration>
+    <!-- Console appender with trace context -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} trace_id=%X{trace_id} span_id=%X{span_id} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- OpenTelemetry appender for sending logs via OTLP -->
+    <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <!-- Capture MDC attributes -->
+        <captureMdcAttributes>*</captureMdcAttributes>
+        <!-- Capture code attributes (file, line, method) -->
+        <captureCodeAttributes>true</captureCodeAttributes>
+        <!-- Capture marker attributes -->
+        <captureMarkerAttribute>true</captureMarkerAttribute>
+        <!-- Capture key-value pair attributes -->
+        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
+        <!-- Capture logger context attributes -->
+        <captureLoggerContext>true</captureLoggerContext>
+    </appender>
+
+    <!-- Root logger configuration -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="OTEL"/>
+    </root>
+
+    <!-- Reduce noise from some verbose loggers -->
+    <logger name="com.netflix" level="WARN"/>
+    <logger name="org.eclipse.persistence" level="WARN"/>
+    <logger name="org.glassfish" level="WARN"/>
+    <logger name="io.opentelemetry" level="WARN"/>
+</configuration>

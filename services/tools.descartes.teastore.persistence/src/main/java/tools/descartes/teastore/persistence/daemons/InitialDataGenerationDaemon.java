@@ -21,7 +21,6 @@ import jakarta.servlet.annotation.WebListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.opentracing.util.GlobalTracer;
 import tools.descartes.teastore.persistence.repository.DataGenerator;
 import tools.descartes.teastore.registryclient.RegistryClient;
 import tools.descartes.teastore.registryclient.Service;
@@ -62,7 +61,7 @@ public class InitialDataGenerationDaemon implements ServletContextListener {
    *          The servlet context event at initialization.
    */
   public void contextInitialized(ServletContextEvent event) {
-    GlobalTracer.register(Tracing.init(Service.PERSISTENCE.getServiceName()));
+    Tracing.init(Service.PERSISTENCE.getServiceName());
     waitForDatabase();
     if (DataGenerator.GENERATOR.isDatabaseEmpty()) {
       LOG.info("Database is empty. Generating new database content");
