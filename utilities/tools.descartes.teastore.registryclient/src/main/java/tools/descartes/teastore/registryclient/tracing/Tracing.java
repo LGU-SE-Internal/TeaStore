@@ -9,6 +9,7 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -16,6 +17,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender;
 
 /**
  * Utility functions for OpenTelemetry integration.
@@ -25,6 +27,15 @@ import io.opentelemetry.context.propagation.TextMapSetter;
  * (Java agent or Kubernetes operator), which configures the SDK via environment variables.
  * When running without auto-instrumentation, the SDK should be configured programmatically
  * or using the autoconfigure module.
+ *
+ * <p>Log correlation with traces:
+ * The OpenTelemetry Logback appender automatically correlates logs with the current trace
+ * when a span is active (via {@code span.makeCurrent()}). For this to work:
+ * <ul>
+ *   <li>With auto-instrumentation: The agent handles appender installation automatically</li>
+ *   <li>Without auto-instrumentation: Call {@code OpenTelemetryAppender.install(openTelemetry)}
+ *       after SDK initialization, which this class does automatically</li>
+ * </ul>
  *
  * @author Long Bui
  */
@@ -76,9 +87,13 @@ public final class Tracing {
       };
 
   /**
-   * Initialize the OpenTelemetry tracer for the service.
+   * Initialize the OpenTelemetry tracer for the service and install the log appender.
    * When using OpenTelemetry auto-instrumentation or SDK configuration via environment variables,
    * this method uses GlobalOpenTelemetry to get the tracer.
+   *
+   * <p>This method also installs the OpenTelemetry Logback appender to enable automatic
+   * trace-log correlation. When logs are emitted within an active span, the trace_id and
+   * span_id are automatically attached to the log record.
    *
    * <p>For auto-instrumentation (Java agent or Kubernetes operator), the SDK is configured
    * automatically. For manual SDK usage, configure the SDK using AutoConfiguredOpenTelemetrySdk
@@ -90,7 +105,16 @@ public final class Tracing {
     if (!initialized) {
       synchronized (Tracing.class) {
         if (!initialized) {
-          tracer = GlobalOpenTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
+          OpenTelemetry openTelemetry = GlobalOpenTelemetry.get();
+          tracer = openTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
+          
+          // Install the OpenTelemetry Logback appender for trace-log correlation.
+          // This enables automatic correlation of logs with traces - when a log is 
+          // emitted within an active span, the trace_id and span_id are automatically
+          // attached to the log record without needing manual MDC management.
+          // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
+          OpenTelemetryAppender.install(openTelemetry);
+          
           initialized = true;
         }
       }

@@ -3,26 +3,32 @@
   Logback configuration with OpenTelemetry appender for trace/log correlation.
   Logs are sent to OTEL Collector via OTLP along with trace context (trace_id, span_id).
   
+  Log-trace correlation is automatic: when a log is emitted within an active span
+  (after span.makeCurrent()), the OpenTelemetry appender automatically includes
+  trace_id and span_id in the log record. No manual MDC management is required.
+  
   This configuration follows the pattern from:
   https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
 -->
 <configuration>
-    <!-- Console appender with trace context -->
+    <!-- Console appender with trace context from MDC (for local debugging) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} trace_id=%X{trace_id} span_id=%X{span_id} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- OpenTelemetry appender for sending logs via OTLP -->
+    <!-- 
+      OpenTelemetry appender for sending logs via OTLP.
+      Trace correlation is automatic - when logs are emitted within an active span,
+      the appender reads trace_id and span_id from Span.current() automatically.
+    -->
     <appender name="OpenTelemetry"
               class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
         <!-- Capture experimental attributes like thread info, code location -->
         <captureExperimentalAttributes>true</captureExperimentalAttributes>
         <!-- Capture key-value pair attributes from structured logging -->
         <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
-        <!-- Capture MDC attributes for trace correlation -->
-        <captureMdcAttributes>*</captureMdcAttributes>
     </appender>
 
     <!-- Root logger configuration -->
