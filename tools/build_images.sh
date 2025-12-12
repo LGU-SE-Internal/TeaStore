@@ -10,15 +10,16 @@
 #   -r REGISTRY    Container registry (default: 10.10.10.240/library)
 #   -t TAG         Image tag (default: latest)
 #   -p             Push images after build
-#   -b             Build only (no push, for local testing)
+#   -b             Build base image (skip if not specified)
 #   -m             Build Maven first
 #   -h             Show this help message
 #
 # Examples:
-#   ./build_images.sh -p                    # Build and push with default registry
+#   ./build_images.sh -p                    # Build services and push (no base)
+#   ./build_images.sh -b -p                 # Build base + services and push
 #   ./build_images.sh -r myregistry.com -p  # Use custom registry
-#   ./build_images.sh -t v1.0.0 -p          # Build with specific tag
-#   ./build_images.sh -b                    # Build locally only
+#   ./build_images.sh -t v1.0.0 -b -p       # Build all with specific tag
+#   ./build_images.sh -m -b -p              # Maven build + base + services
 #
 
 set -e
@@ -27,6 +28,7 @@ set -e
 REGISTRY="${REGISTRY:-10.10.10.240/library}"
 TAG="${TAG:-latest}"
 PUSH_IMAGES=false
+BUILD_BASE=false
 BUILD_MAVEN=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -56,7 +58,7 @@ print_error() {
 }
 
 print_usage() {
-    head -25 "$0" | tail -21
+    head -26 "$0" | tail -22
     exit 0
 }
 
@@ -66,7 +68,7 @@ while getopts 'r:t:pbmh' flag; do
         r) REGISTRY="${OPTARG}" ;;
         t) TAG="${OPTARG}" ;;
         p) PUSH_IMAGES=true ;;
-        b) PUSH_IMAGES=false ;;
+        b) BUILD_BASE=true ;;
         m) BUILD_MAVEN=true ;;
         h) print_usage ;;
         *) print_usage ;;
@@ -78,6 +80,7 @@ print_info "TeaStore Docker Build Script"
 print_info "========================================"
 print_info "Registry: ${REGISTRY}"
 print_info "Tag: ${TAG}"
+print_info "Build Base: ${BUILD_BASE}"
 print_info "Push Images: ${PUSH_IMAGES}"
 print_info "Build Maven: ${BUILD_MAVEN}"
 print_info "========================================"
@@ -114,68 +117,18 @@ build_image() {
     print_success "Built ${full_image}"
 }
 
-# Backup original Dockerfiles that reference the base image
-backup_dockerfiles() {
-    print_info "Backing up Dockerfiles..."
-    for dockerfile in "${PROJECT_ROOT}"/services/tools.descartes.teastore.*/Dockerfile; do
-        if [ -f "$dockerfile" ]; then
-            cp "$dockerfile" "${dockerfile}.bak"
-        fi
-    done
-    # Also backup jmeter Dockerfile which uses base image
-    if [ -f "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile" ]; then
-        cp "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile" \
-           "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile.bak"
-    fi
-}
-
-# Update Dockerfiles to use custom registry
-update_dockerfiles() {
-    print_info "Updating Dockerfiles to use registry: ${REGISTRY}..."
-    for dockerfile in "${PROJECT_ROOT}"/services/tools.descartes.teastore.*/Dockerfile; do
-        if [ -f "$dockerfile" ]; then
-            sed -i "s|FROM descartesresearch/teastore-base|FROM ${REGISTRY}/teastore-base:${TAG}|g" "$dockerfile"
-        fi
-    done
-    # Update jmeter Dockerfile
-    if [ -f "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile" ]; then
-        sed -i "s|FROM descartesresearch/teastore-base|FROM ${REGISTRY}/teastore-base:${TAG}|g" \
-            "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile"
-    fi
-}
-
-# Restore original Dockerfiles
-restore_dockerfiles() {
-    print_info "Restoring original Dockerfiles..."
-    for dockerfile in "${PROJECT_ROOT}"/services/tools.descartes.teastore.*/Dockerfile.bak; do
-        if [ -f "$dockerfile" ]; then
-            mv "$dockerfile" "${dockerfile%.bak}"
-        fi
-    done
-    if [ -f "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile.bak" ]; then
-        mv "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile.bak" \
-           "${PROJECT_ROOT}/utilities/tools.descartes.teastore.jmeter/Dockerfile"
-    fi
-}
-
-# Set up cleanup trap
-cleanup() {
-    restore_dockerfiles
-}
-trap cleanup EXIT
-
 # Main build process
 print_info "Starting Docker builds..."
 
-# Backup and update Dockerfiles
-backup_dockerfiles
-update_dockerfiles
-
-# 1. Build base images first (no dependencies)
-print_info "======== Building Base Images ========"
-build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.database" "teastore-db"
-build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.dockerbase" "teastore-base"
-build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.kieker.rabbitmq" "teastore-kieker-rabbitmq"
+# 1. Build base images first (only if -b flag is set)
+if [ "$BUILD_BASE" = true ]; then
+    print_info "======== Building Base Images ========"
+    build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.database" "teastore-db"
+    build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.dockerbase" "teastore-base"
+    build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.kieker.rabbitmq" "teastore-kieker-rabbitmq"
+else
+    print_warning "Skipping base image builds. Use -b flag to build base images."
+fi
 
 # 2. Build service images (depend on base image)
 print_info "======== Building Service Images ========"
@@ -203,9 +156,11 @@ print_info "========================================"
 
 # Print image list
 print_info "Built images:"
-echo "  - ${REGISTRY}/teastore-db:${TAG}"
-echo "  - ${REGISTRY}/teastore-base:${TAG}"
-echo "  - ${REGISTRY}/teastore-kieker-rabbitmq:${TAG}"
+if [ "$BUILD_BASE" = true ]; then
+    echo "  - ${REGISTRY}/teastore-db:${TAG}"
+    echo "  - ${REGISTRY}/teastore-base:${TAG}"
+    echo "  - ${REGISTRY}/teastore-kieker-rabbitmq:${TAG}"
+fi
 echo "  - ${REGISTRY}/teastore-registry:${TAG}"
 echo "  - ${REGISTRY}/teastore-persistence:${TAG}"
 echo "  - ${REGISTRY}/teastore-image:${TAG}"
@@ -213,8 +168,10 @@ echo "  - ${REGISTRY}/teastore-webui:${TAG}"
 echo "  - ${REGISTRY}/teastore-auth:${TAG}"
 echo "  - ${REGISTRY}/teastore-recommender:${TAG}"
 echo "  - ${REGISTRY}/teastore-jmeter:${TAG}"
-echo "  - ${REGISTRY}/teastore-httploadgen:${TAG}"
-echo "  - ${REGISTRY}/teastore-httploaddirector:${TAG}"
+if [ -f "${PROJECT_ROOT}/utilities/tools.descartes.teastore.httploadgenerator/Dockerfile.loadgen" ]; then
+    echo "  - ${REGISTRY}/teastore-httploadgen:${TAG}"
+    echo "  - ${REGISTRY}/teastore-httploaddirector:${TAG}"
+fi
 
 if [ "$PUSH_IMAGES" = true ]; then
     print_success "All images pushed to ${REGISTRY}"
