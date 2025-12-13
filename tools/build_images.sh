@@ -125,7 +125,6 @@ if [ "$BUILD_BASE" = true ]; then
     print_info "======== Building Base Images ========"
     build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.database" "teastore-db"
     build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.dockerbase" "teastore-base"
-    build_image "${PROJECT_ROOT}/utilities/tools.descartes.teastore.kieker.rabbitmq" "teastore-kieker-rabbitmq"
 else
     print_warning "Skipping base image builds. Use -b flag to build base images."
 fi
@@ -159,7 +158,6 @@ print_info "Built images:"
 if [ "$BUILD_BASE" = true ]; then
     echo "  - ${REGISTRY}/teastore-db:${TAG}"
     echo "  - ${REGISTRY}/teastore-base:${TAG}"
-    echo "  - ${REGISTRY}/teastore-kieker-rabbitmq:${TAG}"
 fi
 echo "  - ${REGISTRY}/teastore-registry:${TAG}"
 echo "  - ${REGISTRY}/teastore-persistence:${TAG}"
