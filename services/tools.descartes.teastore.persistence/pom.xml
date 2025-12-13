@@ -20,6 +20,19 @@
 			<version>${teastoreversion}</version>
 		</dependency>
 
+		<!-- Logback for SLF4J implementation -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency>
+		<!-- OpenTelemetry logback appender for log-trace correlation -->
+		<dependency>
+			<groupId>io.opentelemetry.instrumentation</groupId>
+			<artifactId>opentelemetry-logback-appender-1.0</artifactId>
+			<version>${opentelemetry.instrumentation.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>jakarta.persistence</groupId>
 			<artifactId>jakarta.persistence-api</artifactId>
