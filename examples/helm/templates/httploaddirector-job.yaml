@@ -14,8 +14,9 @@ spec:
     spec:
       restartPolicy: {{ .Values.httploaddirector.restartPolicy }}
       initContainers:
+        {{- include "teastore.initContainer.waitForRegistry" . | nindent 8 }}
         - name: wait-for-loadgen
-          image: busybox:latest
+          image: busybox:1.36
           command: 
             - sh
             - -c

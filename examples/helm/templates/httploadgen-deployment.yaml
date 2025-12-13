@@ -16,6 +16,8 @@ spec:
       labels:
         {{- include "teastore.httploadgen.selectorLabels" . | nindent 8 }}
     spec:
+      initContainers:
+      {{- include "teastore.initContainer.waitForRegistry" . | nindent 6 }}
       containers:
         - name: httploadgen
           image: {{ include "teastore.image" (dict "imageConfig" .Values.httploadgen.image "global" .Values.global "Chart" .Chart) }}

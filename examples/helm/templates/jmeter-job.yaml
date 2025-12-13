@@ -16,6 +16,8 @@ spec:
       
     spec:
       restartPolicy: {{ .Values.jmeter.restartPolicy }}
+      initContainers:
+      {{- include "teastore.initContainer.waitForRegistry" . | nindent 6 }}
       containers:
       - name: jmeter
         image: {{ include "teastore.image" (dict "imageConfig" .Values.jmeter.image "global" .Values.global "Chart" .Chart) }}

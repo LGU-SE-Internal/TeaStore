@@ -119,3 +119,61 @@ Usage: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.webui.i
 {{- define "teastore.imagePullPolicy" -}}
 {{- .imageConfig.pullPolicy | default .global.image.pullPolicy | default "IfNotPresent" -}}
 {{- end }}
+
+{{/*
+Init container to wait for all services to be registered in the registry
+*/}}
+{{- define "teastore.initContainer.waitForRegistry" -}}
+- name: wait-for-registry
+  image: busybox:1.36
+  command:
+    - sh
+    - -c
+    - |
+      echo "Waiting for all services to be registered in registry..."
+      REGISTRY_HOST="{{ include "teastore.registry.url" . }}"
+      REGISTRY_PORT="{{ .Values.registry.service.port }}"
+      REQUIRED_SERVICES="tools.descartes.teastore.persistence tools.descartes.teastore.auth tools.descartes.teastore.image tools.descartes.teastore.recommender tools.descartes.teastore.webui"
+      MAX_WAIT_TIME=600  # Maximum wait time in seconds (10 minutes)
+      START_TIME=$(date +%s)
+      
+      # Wait for registry service to be available
+      until nc -z -v -w5 $REGISTRY_HOST $REGISTRY_PORT; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED=$((CURRENT_TIME - START_TIME))
+        if [ $ELAPSED -gt $MAX_WAIT_TIME ]; then
+          echo "Timeout waiting for registry service to be available after ${MAX_WAIT_TIME}s"
+          exit 1
+        fi
+        echo "Registry not available, waiting... (${ELAPSED}s elapsed)"
+        sleep 2
+      done
+      echo "Registry is available, checking service registration..."
+      
+      # Check if all required services are registered
+      while true; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED=$((CURRENT_TIME - START_TIME))
+        if [ $ELAPSED -gt $MAX_WAIT_TIME ]; then
+          echo "Timeout waiting for services to register after ${MAX_WAIT_TIME}s"
+          exit 1
+        fi
+        
+        all_registered=true
+        for service in $REQUIRED_SERVICES; do
+          response=$(wget -q -O- --timeout=5 http://$REGISTRY_HOST:$REGISTRY_PORT/tools.descartes.teastore.registry/rest/services/$service 2>/dev/null)
+          # Check if response is not empty and contains at least one service instance
+          if [ -z "$response" ] || [ "$response" = "[]" ]; then
+            echo "Service $service not yet registered, waiting... (${ELAPSED}s elapsed)"
+            all_registered=false
+            break
+          fi
+        done
+        
+        if [ "$all_registered" = true ]; then
+          echo "All required services are registered!"
+          break
+        fi
+        sleep 5
+      done
+{{- end }}
