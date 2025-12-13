@@ -19,11 +19,6 @@
 			<artifactId>registryclient</artifactId>
 			<version>${teastoreversion}</version>
 		</dependency>
-		<dependency>
-			<groupId>tools.descartes.teastore</groupId>
-			<artifactId>kieker.probes</artifactId>
-			<version>${teastoreversion}</version>
-		</dependency>
 
 		<dependency>
 			<groupId>jakarta.persistence</groupId>
