@@ -34,8 +34,8 @@ spec:
         - name: {{ include "teastore.db.microservice" . }}
           securityContext:
             {{- toYaml .Values.db.securityContext | nindent 12 }}
-          image: "{{ .Values.db.image.repository }}:{{ .Values.db.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.db.image.pullPolicy }}
+          image: {{ include "teastore.image" (dict "imageConfig" .Values.db.image "global" .Values.global "Chart" .Chart) }}
+          imagePullPolicy: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.db.image "global" .Values.global) }}
           ports:
             - containerPort: 3306
               protocol: TCP

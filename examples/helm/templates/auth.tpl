@@ -12,7 +12,7 @@ Selector labels
 {{- define "teastore.auth.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/name: {{ include "teastore.auth.microservice" . }}
-app.kubernetes.io/component: authenticator
+app.kubernetes.io/component: teastore-auth
 {{- end }}
 
 {{- define "teastore.auth.hostname" -}}

@@ -5,6 +5,9 @@
 	<properties>
 		<teastoreversion>1.4.2</teastoreversion>
 		<slf4j.version>1.7.36</slf4j.version>
+		<opentelemetry.version>1.44.1</opentelemetry.version>
+		<opentelemetry.instrumentation.version>2.10.0-alpha</opentelemetry.instrumentation.version>
+		<logback.version>1.2.13</logback.version>
 	</properties>
 
 	<prerequisites>
@@ -18,8 +21,6 @@
 	
 	<modules>
 		<module>interfaces/tools.descartes.teastore.entities</module>
-		<module>./utilities/tools.descartes.teastore.kieker.probes</module>
-		<module>./utilities/tools.descartes.teastore.kieker.rabbitmq</module>
 		<module>utilities/tools.descartes.teastore.registryclient</module>
 		<module>utilities/tools.descartes.teastore.dockermemoryconfigurator</module>
 		<module>./utilities/tools.descartes.teastore.dockerbase</module>

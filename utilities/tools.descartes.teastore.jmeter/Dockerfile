@@ -1,4 +1,5 @@
-FROM descartesresearch/teastore-base:latest
+ARG BASE_IMAGE=10.10.10.240/library/teastore-base:latest
+FROM ${BASE_IMAGE}
 
 # Install JMeter
 ENV JMETER_VERSION=5.6.3

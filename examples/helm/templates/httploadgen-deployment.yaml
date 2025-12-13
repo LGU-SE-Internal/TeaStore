@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: httploadgen
-          image: "{{ .Values.httploadgen.image.repository }}:{{ .Values.httploadgen.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.httploadgen.image.pullPolicy }}
+          image: {{ include "teastore.image" (dict "imageConfig" .Values.httploadgen.image "global" .Values.global "Chart" .Chart) }}
+          imagePullPolicy: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.httploadgen.image "global" .Values.global) }}
           ports:
             - name: loadgen
               containerPort: 24226

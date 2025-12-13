@@ -1,11 +1,25 @@
 clientside_loadbalancer: true # Deploys as Statefulset which enables communication to every instance individually. A kubernetes service is used otherwise
+
+# Global image configuration
+# Services will use these values unless explicitly overridden
+global:
+  image:
+    # Container registry (e.g., "10.10.10.240/library", "docker.io/descartesresearch")
+    registry: "10.10.10.240/library"
+    # Default image tag for all services
+    tag: "latest"
+    # Default pull policy
+    pullPolicy: IfNotPresent
+
 webui:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-webui
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-webui"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -29,9 +43,11 @@ webui:
 registry:
   enabled: true
   image:
-    repository: descartesresearch/teastore-registry
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-registry"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -54,9 +70,11 @@ registry:
 db:
   enabled: true
   image:
-    repository: descartesresearch/teastore-db
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-db"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -80,9 +98,11 @@ auth:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-auth
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-auth"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -107,9 +127,11 @@ image:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-image
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-image"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -134,9 +156,11 @@ recommender:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-recommender
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-recommender"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -161,9 +185,11 @@ persistence:
   enabled: true
   replicaCount: 1
   image:
-    repository: descartesresearch/teastore-persistence
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-persistence"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
     tag: ""
   imagePullSecrets: []
   podAnnotations: {}
@@ -194,15 +220,31 @@ opentelemetry:
   instrumentationName: "opentelemetry-kube-stack"
   # The namespace where OpenTelemetry Instrumentation resource is deployed
   monitoringNamespace: "monitoring"
+  # OTLP exporter endpoint for traces and logs
+  # This should point to your OTEL Collector service
+  otlpEndpoint: "http://otel-collector.monitoring.svc.cluster.local:4317"
+  # OTLP protocol: grpc or http/protobuf
+  otlpProtocol: "grpc"
+  # Enable logs export via OTLP
+  logsExporterEnabled: true
+  # Enable traces export via OTLP
+  tracesExporterEnabled: true
+  # Enable metrics export via OTLP
+  metricsExporterEnabled: true
+  # Sampling ratio (1.0 = 100% sampling)
+  samplingRatio: "1.0"
 
 # HTTP Load Generator settings
 httploadgen:
   enabled: false
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-httploadgen
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-httploadgen"
     pullPolicy: Always
-    tag: "latest"
+    # Leave empty to use global.image.tag
+    tag: ""
   service:
     type: ClusterIP
     port: 24226
@@ -220,9 +262,12 @@ httploaddirector:
   enabled: false
   restartPolicy: Never
   image:
-    repository: 10.10.10.240/library/teastore-httploaddirector
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-httploaddirector"
     pullPolicy: Always
-    tag: "latest"
+    # Leave empty to use global.image.tag
+    tag: ""
   # Load profile to use (file path in container)
   loadProfile: "/director/profiles/increasingLowIntensity.csv"
   # Lua script to use (file path in container)
@@ -251,9 +296,12 @@ jmeter:
   backoffLimit: 0
   restartPolicy: Never
   image:
-    repository: 10.10.10.240/library/teastore-jmeter
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-jmeter"
     pullPolicy: Always
-    tag: "latest"
+    # Leave empty to use global.image.tag
+    tag: ""
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"

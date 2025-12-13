@@ -30,18 +30,3 @@ then
 fi
 sed -i 's/securerandom.source=file:\/dev.*/securerandom.source=file:\/dev\/urandom/g'  ${JAVA_HOME}/conf/security/java.security
 
-if [ "$RABBITMQ_HOST" != "unset" ]
-then
-  sed -i "s/kieker.monitoring.writer=kieker.monitoring.writer.filesystem.FileWriter/kieker.monitoring.writer=kieker.monitoring.writer.collector.ChunkingCollector/g" /kieker/config/kieker.monitoring.properties
-  sed -i "s/kieker.monitoring.writer.amqp.ChunkingAmqpWriter.uri=amqp:\/\/admin:nimda@RABBITMQ_PORT_PLACEHOLDER/kieker.monitoring.writer.amqp.ChunkingAmqpWriter.uri=amqp:\/\/admin:nimda@${RABBITMQ_HOST}/g" /kieker/config/kieker.monitoring.properties
-fi
-
-if [ "$LOG_TO_FILE" != "true" ] && [ "$RABBITMQ_HOST" == "unset" ]
-then
-  sed -i 's/kieker.monitoring.enabled=true/kieker.monitoring.enabled=false/g' /kieker/config/kieker.monitoring.properties
-fi
-
-touch /usr/local/tomcat/bin/setenv.sh
-chmod +x /usr/local/tomcat/bin/setenv.sh
-echo 'export JAVA_OPTS="-javaagent:/kieker/agent/agent.jar --add-opens=java.base/java.lang=ALL-UNNAMED -Dkieker.monitoring.configuration=/kieker/config/kieker.monitoring.properties -Daj.weaving.verbose=false -Dorg.aspectj.weaver.loadtime.configuration=aop.xml -Dkieker.monitoring.skipDefaultAOPConfiguration=true -Daj.weaving.loadersToSkip=java.net.URLClassLoader -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true"' >> /usr/local/tomcat/bin/setenv.sh
-

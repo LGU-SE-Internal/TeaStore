@@ -28,8 +28,8 @@ spec:
               echo "LoadGen is ready!"
       containers:
         - name: httploaddirector
-          image: "{{ .Values.httploaddirector.image.repository }}:{{ .Values.httploaddirector.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.httploaddirector.image.pullPolicy }}
+          image: {{ include "teastore.image" (dict "imageConfig" .Values.httploaddirector.image "global" .Values.global "Chart" .Chart) }}
+          imagePullPolicy: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.httploaddirector.image "global" .Values.global) }}
           env:
             - name: LOADGEN_HOST
               value: {{ include "teastore.httploadgen.fullname" . }}

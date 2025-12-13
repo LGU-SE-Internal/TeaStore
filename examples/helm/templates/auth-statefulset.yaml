@@ -34,8 +34,8 @@ spec:
         - name: {{ include "teastore.auth.microservice" . }}
           securityContext:
             {{- toYaml .Values.auth.securityContext | nindent 12 }}
-          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          image: {{ include "teastore.image" (dict "imageConfig" .Values.auth.image "global" .Values.global "Chart" .Chart) }}
+          imagePullPolicy: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.auth.image "global" .Values.global) }}
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -52,6 +52,7 @@ spec:
               value: {{ template "teastore.registry.url" . }}
             - name: REGISTRY_PORT
               value: {{ .Values.registry.service.port | quote }}
+            {{- include "teastore.otel.envVars" . | nindent 12 }}
           resources:
             {{- toYaml .Values.auth.resources | nindent 12 }}
       {{- with .Values.auth.nodeSelector }}
