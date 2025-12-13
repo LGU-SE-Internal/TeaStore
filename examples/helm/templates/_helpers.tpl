@@ -125,13 +125,13 @@ Init container to wait for all services to be registered in the registry
 */}}
 {{- define "teastore.initContainer.waitForRegistry" -}}
 - name: wait-for-registry
-  image: busybox:latest
+  image: busybox:1.36
   command:
     - sh
     - -c
     - |
       echo "Waiting for all services to be registered in registry..."
-      REGISTRY_HOST="{{ template "teastore.registry.url" . }}"
+      REGISTRY_HOST="{{ include "teastore.registry.url" . }}"
       REGISTRY_PORT="{{ .Values.registry.service.port }}"
       REQUIRED_SERVICES="tools.descartes.teastore.persistence tools.descartes.teastore.auth tools.descartes.teastore.image tools.descartes.teastore.recommender tools.descartes.teastore.webui"
       
