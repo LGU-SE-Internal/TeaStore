@@ -39,7 +39,9 @@ spec:
             while true; do
               all_registered=true
               for service in $REQUIRED_SERVICES; do
-                if ! wget -q -O- http://$REGISTRY_HOST:$REGISTRY_PORT/tools.descartes.teastore.registry/rest/services/$service 2>/dev/null | grep -q "\["; then
+                response=$(wget -q -O- http://$REGISTRY_HOST:$REGISTRY_PORT/tools.descartes.teastore.registry/rest/services/$service 2>/dev/null)
+                # Check if response is not empty and contains at least one service instance
+                if [ -z "$response" ] || [ "$response" = "[]" ]; then
                   echo "Service $service not yet registered, waiting..."
                   all_registered=false
                   break
