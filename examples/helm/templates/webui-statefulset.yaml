@@ -34,8 +34,8 @@ spec:
         - name: {{ include "teastore.webui.microservice" . }}
           securityContext:
             {{- toYaml .Values.webui.securityContext | nindent 12 }}
-          image: "{{ .Values.webui.image.repository }}:{{ .Values.webui.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.webui.image.pullPolicy }}
+          image: {{ include "teastore.image" (dict "imageConfig" .Values.webui.image "global" .Values.global "Chart" .Chart) }}
+          imagePullPolicy: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.webui.image "global" .Values.global) }}
           ports:
             - containerPort: 8080
               protocol: TCP

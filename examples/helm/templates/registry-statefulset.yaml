@@ -34,8 +34,8 @@ spec:
         - name: {{ include "teastore.registry.microservice" . }}
           securityContext:
             {{- toYaml .Values.registry.securityContext | nindent 12 }}
-          image: "{{ .Values.registry.image.repository }}:{{ .Values.registry.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.registry.image.pullPolicy }}
+          image: {{ include "teastore.image" (dict "imageConfig" .Values.registry.image "global" .Values.global "Chart" .Chart) }}
+          imagePullPolicy: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.registry.image "global" .Values.global) }}
           ports:
             - containerPort: 8080
               protocol: TCP

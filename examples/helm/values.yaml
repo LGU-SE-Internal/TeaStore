@@ -1,17 +1,26 @@
 clientside_loadbalancer: true # Deploys as Statefulset which enables communication to every instance individually. A kubernetes service is used otherwise
 
-# Container Registry configuration
-# Change this to your private registry
-containerRegistry: &registry "10.10.10.240/library"
+# Global image configuration
+# Services will use these values unless explicitly overridden
+global:
+  image:
+    # Container registry (e.g., "10.10.10.240/library", "docker.io/descartesresearch")
+    registry: "10.10.10.240/library"
+    # Default image tag for all services
+    tag: "latest"
+    # Default pull policy
+    pullPolicy: IfNotPresent
 
 webui:
   enabled: true
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-webui
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-webui"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -34,10 +43,12 @@ webui:
 registry:
   enabled: true
   image:
-    repository: 10.10.10.240/library/teastore-registry
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-registry"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -59,10 +70,12 @@ registry:
 db:
   enabled: true
   image:
-    repository: 10.10.10.240/library/teastore-db
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-db"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -85,10 +98,12 @@ auth:
   enabled: true
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-auth
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-auth"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -112,10 +127,12 @@ image:
   enabled: true
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-image
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-image"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -139,10 +156,12 @@ recommender:
   enabled: true
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-recommender
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-recommender"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -166,10 +185,12 @@ persistence:
   enabled: true
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-persistence
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-persistence"
+    pullPolicy: ""
+    # Leave empty to use global.image.tag
+    tag: ""
   imagePullSecrets: []
   podAnnotations: {}
   podSecurityContext: {}
@@ -218,9 +239,12 @@ httploadgen:
   enabled: false
   replicaCount: 1
   image:
-    repository: 10.10.10.240/library/teastore-httploadgen
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-httploadgen"
     pullPolicy: Always
-    tag: "latest"
+    # Leave empty to use global.image.tag
+    tag: ""
   service:
     type: ClusterIP
     port: 24226
@@ -238,9 +262,12 @@ httploaddirector:
   enabled: false
   restartPolicy: Never
   image:
-    repository: 10.10.10.240/library/teastore-httploaddirector
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-httploaddirector"
     pullPolicy: Always
-    tag: "latest"
+    # Leave empty to use global.image.tag
+    tag: ""
   # Load profile to use (file path in container)
   loadProfile: "/director/profiles/increasingLowIntensity.csv"
   # Lua script to use (file path in container)
@@ -269,9 +296,12 @@ jmeter:
   backoffLimit: 0
   restartPolicy: Never
   image:
-    repository: 10.10.10.240/library/teastore-jmeter
+    # Leave empty to use global.image.registry
+    registry: ""
+    name: "teastore-jmeter"
     pullPolicy: Always
-    tag: "latest"
+    # Leave empty to use global.image.tag
+    tag: ""
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"

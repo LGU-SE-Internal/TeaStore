@@ -101,3 +101,21 @@ app.kubernetes.io/component: teastore-jmeter
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/component: teastore-jmeter
 {{- end }}
+
+{{/*
+Image helpers - construct full image reference with global fallback
+Usage: {{ include "teastore.image" (dict "imageConfig" .Values.webui.image "global" .Values.global "Chart" .Chart) }}
+*/}}
+{{- define "teastore.image" -}}
+{{- $registry := .imageConfig.registry | default .global.image.registry -}}
+{{- $tag := .imageConfig.tag | default .global.image.tag | default .Chart.AppVersion -}}
+{{- printf "%s/%s:%s" $registry .imageConfig.name $tag -}}
+{{- end }}
+
+{{/*
+Image pull policy helper with global fallback
+Usage: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.webui.image "global" .Values.global) }}
+*/}}
+{{- define "teastore.imagePullPolicy" -}}
+{{- .imageConfig.pullPolicy | default .global.image.pullPolicy | default "IfNotPresent" -}}
+{{- end }}
