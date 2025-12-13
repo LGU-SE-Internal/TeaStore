@@ -107,7 +107,9 @@ build_image() {
         return 1
     fi
     
-    docker build -t "${full_image}" -f "${context_path}/${dockerfile}" "${context_path}"
+    docker build -t "${full_image}" \
+        --build-arg BASE_IMAGE="${REGISTRY}/teastore-base:${TAG}" \
+        -f "${context_path}/${dockerfile}" "${context_path}"
     
     if [ "$PUSH_IMAGES" = true ]; then
         print_info "Pushing ${full_image}..."
