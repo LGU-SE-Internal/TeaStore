@@ -52,5 +52,9 @@ These environment variables configure the OpenTelemetry SDK for traces and logs 
   value: "tracecontext,baggage,b3multi"
 - name: OTEL_RESOURCE_ATTRIBUTES
   value: "service.namespace=teastore,deployment.environment=kubernetes"
+- name: OTEL_INSTRUMENTATION_LOGBACK_MDC_ADD_BAGGAGE
+  value: "true"
+- name: OTEL_INSTRUMENTATION_LOGBACK_APPENDER_ENABLED
+  value: "true"
 {{- end }}
 {{- end }}
