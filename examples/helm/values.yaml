@@ -7,7 +7,7 @@ global:
     # Container registry (e.g., "10.10.10.240/library", "docker.io/descartesresearch")
     registry: "10.10.10.240/library"
     # Default image tag for all services
-    tag: "362d81e"
+    tag: "aa0211b7"
     # Default pull policy
     pullPolicy: IfNotPresent
 
