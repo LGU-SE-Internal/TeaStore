@@ -96,11 +96,20 @@ public class TrackingFilter implements Filter {
           String traceId = MDC.get(MDC_TRACE_ID);
           String spanId = MDC.get(MDC_SPAN_ID);
           HttpServletRequest httpRequest = (HttpServletRequest) request;
+          
+          // Use MDC values if available, otherwise get from current span
+          if (traceId == null && currentSpan != null) {
+            traceId = currentSpan.getSpanContext().getTraceId();
+          }
+          if (spanId == null && currentSpan != null) {
+            spanId = currentSpan.getSpanContext().getSpanId();
+          }
+          
           LOG.debug("Agent tracing - Processing request: {} {} trace_id={} span_id={}",
               httpRequest.getMethod(),
               httpRequest.getRequestURI(),
-              traceId != null ? traceId : currentSpan.getSpanContext().getTraceId(),
-              spanId != null ? spanId : currentSpan.getSpanContext().getSpanId());
+              traceId,
+              spanId);
         }
       }
 

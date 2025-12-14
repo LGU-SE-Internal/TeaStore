@@ -8,6 +8,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.HttpHeaders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
@@ -40,6 +43,8 @@ import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppen
  * @author Long Bui
  */
 public final class Tracing {
+
+  private static final Logger LOG = LoggerFactory.getLogger(Tracing.class);
 
   /**
    * Instrumentation library version for OpenTelemetry tracer.
@@ -119,10 +124,12 @@ public final class Tracing {
           // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
           try {
             OpenTelemetryAppender.install(openTelemetry);
+            LOG.debug("OpenTelemetry Logback appender installed successfully");
           } catch (IllegalStateException e) {
             // Appender already installed (likely by agent) - this is fine
             // The agent installs the appender automatically when logback-appender-1.0
             // instrumentation is enabled (which is the default)
+            LOG.debug("OpenTelemetry Logback appender already installed (likely by Java agent)");
           }
           // When using Java agent, the logback-mdc instrumentation automatically populates MDC
           // with trace_id and span_id, so no manual MDC management is needed.
