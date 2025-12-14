@@ -44,6 +44,11 @@ public class TrackingFilter implements Filter {
 
   /**
    * Filter method that sets up OpenTelemetry context and MDC for log correlation.
+   * 
+   * <p>When using the OpenTelemetry Java agent (auto-instrumentation), the agent
+   * automatically instruments HTTP requests and populates MDC with trace_id and span_id.
+   * This filter ensures MDC is set even when the agent isn't used, or provides
+   * additional context extraction if needed.
    *
    * @param request  request
    * @param response response
@@ -53,29 +58,54 @@ public class TrackingFilter implements Filter {
    */
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
-    try (Scope scope = Tracing.extractCurrentSpan((HttpServletRequest) request)) {
-      // Set MDC for log correlation with OpenTelemetry trace context
-      Span currentSpan = Span.current();
-      if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
-        MDC.put(MDC_TRACE_ID, currentSpan.getSpanContext().getTraceId());
-        MDC.put(MDC_SPAN_ID, currentSpan.getSpanContext().getSpanId());
+    
+    // Check if MDC is already populated by the Java agent's logback-mdc instrumentation
+    boolean mdcAlreadySet = MDC.get(MDC_TRACE_ID) != null;
+    Scope customScope = null;
+    
+    try {
+      // If MDC is not already set, we're not using the agent's auto-instrumentation
+      // In this case, manually extract context and set MDC
+      if (!mdcAlreadySet) {
+        customScope = Tracing.extractCurrentSpan((HttpServletRequest) request);
         
-        if (LOG.isDebugEnabled()) {
-          HttpServletRequest httpRequest = (HttpServletRequest) request;
-          LOG.debug("Processing request: {} {} trace_id={} span_id={}",
-              httpRequest.getMethod(),
-              httpRequest.getRequestURI(),
-              currentSpan.getSpanContext().getTraceId(),
-              currentSpan.getSpanContext().getSpanId());
+        // Set MDC for log correlation with OpenTelemetry trace context
+        Span currentSpan = Span.current();
+        if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
+          MDC.put(MDC_TRACE_ID, currentSpan.getSpanContext().getTraceId());
+          MDC.put(MDC_SPAN_ID, currentSpan.getSpanContext().getSpanId());
+          
+          if (LOG.isDebugEnabled()) {
+            HttpServletRequest httpRequest = (HttpServletRequest) request;
+            LOG.debug("Processing request: {} {} trace_id={} span_id={}",
+                httpRequest.getMethod(),
+                httpRequest.getRequestURI(),
+                currentSpan.getSpanContext().getTraceId(),
+                currentSpan.getSpanContext().getSpanId());
+          }
         }
+      } else if (LOG.isDebugEnabled()) {
+        // MDC already set by agent - just log for debugging
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        LOG.debug("Processing request with agent instrumentation: {} {} trace_id={} span_id={}",
+            httpRequest.getMethod(),
+            httpRequest.getRequestURI(),
+            MDC.get(MDC_TRACE_ID),
+            MDC.get(MDC_SPAN_ID));
       }
 
-      try {
-        chain.doFilter(request, response);
-      } finally {
-        // Clean up MDC
+      chain.doFilter(request, response);
+      
+    } finally {
+      // Only clean up MDC if we set it ourselves (not set by agent)
+      if (!mdcAlreadySet) {
         MDC.remove(MDC_TRACE_ID);
         MDC.remove(MDC_SPAN_ID);
+      }
+      
+      // Close custom scope if we created one
+      if (customScope != null) {
+        customScope.close();
       }
     }
   }

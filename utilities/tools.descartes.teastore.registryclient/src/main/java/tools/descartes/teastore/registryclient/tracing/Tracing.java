@@ -87,17 +87,18 @@ public final class Tracing {
       };
 
   /**
-   * Initialize the OpenTelemetry tracer for the service and install the log appender.
-   * When using OpenTelemetry auto-instrumentation or SDK configuration via environment variables,
+   * Initialize the OpenTelemetry tracer for the service.
+   * When using OpenTelemetry auto-instrumentation (Java agent or Kubernetes operator),
    * this method uses GlobalOpenTelemetry to get the tracer.
    *
-   * <p>This method also installs the OpenTelemetry Logback appender to enable automatic
-   * trace-log correlation. When logs are emitted within an active span, the trace_id and
-   * span_id are automatically attached to the log record.
-   *
    * <p>For auto-instrumentation (Java agent or Kubernetes operator), the SDK is configured
-   * automatically. For manual SDK usage, configure the SDK using AutoConfiguredOpenTelemetrySdk
-   * or programmatic configuration before calling this method.
+   * automatically and the Logback appender is installed by the agent. For manual SDK usage,
+   * configure the SDK using AutoConfiguredOpenTelemetrySdk or programmatic configuration
+   * before calling this method.
+   *
+   * <p>Note: When using the Java agent, do NOT call OpenTelemetryAppender.install() manually
+   * as it will conflict with the agent's automatic appender installation. The agent handles
+   * both trace instrumentation and log correlation automatically.
    *
    * @param service is usually the name of the service
    */
@@ -108,12 +109,21 @@ public final class Tracing {
           OpenTelemetry openTelemetry = GlobalOpenTelemetry.get();
           tracer = openTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
           
-          // Install the OpenTelemetry Logback appender for trace-log correlation.
-          // This enables automatic correlation of logs with traces - when a log is 
-          // emitted within an active span, the trace_id and span_id are automatically
-          // attached to the log record without needing manual MDC management.
-          // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
-          OpenTelemetryAppender.install(openTelemetry);
+          // Check if running with Java agent by checking if the agent has already initialized
+          // the GlobalOpenTelemetry. If the agent is running, it handles appender installation.
+          // Only install manually if not using the agent (for standalone SDK usage).
+          String agentPresent = System.getProperty("otel.javaagent.enabled");
+          if (agentPresent == null || !"true".equalsIgnoreCase(agentPresent)) {
+            // No agent detected - install appender manually for standalone SDK usage
+            // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
+            try {
+              OpenTelemetryAppender.install(openTelemetry);
+            } catch (IllegalStateException e) {
+              // Appender already installed (possibly by agent) - this is fine
+            }
+          }
+          // When using Java agent, the logback-mdc instrumentation automatically populates MDC
+          // with trace_id and span_id, so no manual MDC management is needed.
           
           initialized = true;
         }
