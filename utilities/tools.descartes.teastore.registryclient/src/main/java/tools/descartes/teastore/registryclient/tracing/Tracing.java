@@ -109,18 +109,20 @@ public final class Tracing {
           OpenTelemetry openTelemetry = GlobalOpenTelemetry.get();
           tracer = openTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
           
-          // Check if running with Java agent by checking if the agent has already initialized
-          // the GlobalOpenTelemetry. If the agent is running, it handles appender installation.
+          // Check if running with Java agent. The Java agent doesn't set a standard property,
+          // but we can check if GlobalOpenTelemetry has been initialized by the agent by
+          // checking if it's NOT the default no-op instance. A simpler approach is to just
+          // catch the IllegalStateException if appender is already installed.
+          // 
+          // When using Java agent, it handles appender installation automatically.
           // Only install manually if not using the agent (for standalone SDK usage).
-          String agentPresent = System.getProperty("otel.javaagent.enabled");
-          if (agentPresent == null || !"true".equalsIgnoreCase(agentPresent)) {
-            // No agent detected - install appender manually for standalone SDK usage
-            // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
-            try {
-              OpenTelemetryAppender.install(openTelemetry);
-            } catch (IllegalStateException e) {
-              // Appender already installed (possibly by agent) - this is fine
-            }
+          // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
+          try {
+            OpenTelemetryAppender.install(openTelemetry);
+          } catch (IllegalStateException e) {
+            // Appender already installed (likely by agent) - this is fine
+            // The agent installs the appender automatically when logback-appender-1.0
+            // instrumentation is enabled (which is the default)
           }
           // When using Java agent, the logback-mdc instrumentation automatically populates MDC
           // with trace_id and span_id, so no manual MDC management is needed.

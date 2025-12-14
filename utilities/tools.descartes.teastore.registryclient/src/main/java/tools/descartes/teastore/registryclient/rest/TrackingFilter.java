@@ -47,8 +47,10 @@ public class TrackingFilter implements Filter {
    * 
    * <p>When using the OpenTelemetry Java agent (auto-instrumentation), the agent
    * automatically instruments HTTP requests and populates MDC with trace_id and span_id.
-   * This filter ensures MDC is set even when the agent isn't used, or provides
-   * additional context extraction if needed.
+   * In this case, the filter only ensures MDC is accessible.
+   * 
+   * <p>When NOT using the agent, this filter manually extracts trace context and
+   * creates spans for distributed tracing.
    *
    * @param request  request
    * @param response response
@@ -59,46 +61,54 @@ public class TrackingFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     
-    // Check if MDC is already populated by the Java agent's logback-mdc instrumentation
-    boolean mdcAlreadySet = MDC.get(MDC_TRACE_ID) != null;
+    // Check if we have an active span - if so, the agent is likely handling instrumentation
+    Span currentSpan = Span.current();
+    boolean agentActive = currentSpan != null && currentSpan.getSpanContext().isValid();
     Scope customScope = null;
+    boolean mdcSetByUs = false;
     
     try {
-      // If MDC is not already set, we're not using the agent's auto-instrumentation
-      // In this case, manually extract context and set MDC
-      if (!mdcAlreadySet) {
+      if (!agentActive) {
+        // No active span from agent - manually extract context and create span
+        // This is the fallback for when agent is not used
         customScope = Tracing.extractCurrentSpan((HttpServletRequest) request);
+        currentSpan = Span.current();
         
-        // Set MDC for log correlation with OpenTelemetry trace context
-        Span currentSpan = Span.current();
+        // Set MDC for log correlation
         if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
           MDC.put(MDC_TRACE_ID, currentSpan.getSpanContext().getTraceId());
           MDC.put(MDC_SPAN_ID, currentSpan.getSpanContext().getSpanId());
+          mdcSetByUs = true;
           
           if (LOG.isDebugEnabled()) {
             HttpServletRequest httpRequest = (HttpServletRequest) request;
-            LOG.debug("Processing request: {} {} trace_id={} span_id={}",
+            LOG.debug("Manual tracing - Processing request: {} {} trace_id={} span_id={}",
                 httpRequest.getMethod(),
                 httpRequest.getRequestURI(),
                 currentSpan.getSpanContext().getTraceId(),
                 currentSpan.getSpanContext().getSpanId());
           }
         }
-      } else if (LOG.isDebugEnabled()) {
-        // MDC already set by agent - just log for debugging
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        LOG.debug("Processing request with agent instrumentation: {} {} trace_id={} span_id={}",
-            httpRequest.getMethod(),
-            httpRequest.getRequestURI(),
-            MDC.get(MDC_TRACE_ID),
-            MDC.get(MDC_SPAN_ID));
+      } else {
+        // Agent is active - MDC should already be populated by agent's logback-mdc instrumentation
+        // Just verify and log for debugging
+        if (LOG.isDebugEnabled()) {
+          String traceId = MDC.get(MDC_TRACE_ID);
+          String spanId = MDC.get(MDC_SPAN_ID);
+          HttpServletRequest httpRequest = (HttpServletRequest) request;
+          LOG.debug("Agent tracing - Processing request: {} {} trace_id={} span_id={}",
+              httpRequest.getMethod(),
+              httpRequest.getRequestURI(),
+              traceId != null ? traceId : currentSpan.getSpanContext().getTraceId(),
+              spanId != null ? spanId : currentSpan.getSpanContext().getSpanId());
+        }
       }
 
       chain.doFilter(request, response);
       
     } finally {
-      // Only clean up MDC if we set it ourselves (not set by agent)
-      if (!mdcAlreadySet) {
+      // Only clean up MDC if we set it ourselves
+      if (mdcSetByUs) {
         MDC.remove(MDC_TRACE_ID);
         MDC.remove(MDC_SPAN_ID);
       }
