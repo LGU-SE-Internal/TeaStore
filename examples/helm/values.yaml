@@ -7,7 +7,7 @@ global:
     # Container registry (e.g., "10.10.10.240/library", "docker.io/descartesresearch")
     registry: "10.10.10.240/library"
     # Default image tag for all services
-    tag: "latest"
+    tag: "aa0211b7"
     # Default pull policy
     pullPolicy: IfNotPresent
 
@@ -222,7 +222,7 @@ opentelemetry:
   monitoringNamespace: "monitoring"
   # OTLP exporter endpoint for traces and logs
   # This should point to your OTEL Collector service
-  otlpEndpoint: "http://otel-collector.monitoring.svc.cluster.local:4317"
+  otlpEndpoint: "http://opentelemetry-kube-stack-deployment-collector.monitoring.svc.cluster.local:4317"
   # OTLP protocol: grpc or http/protobuf
   otlpProtocol: "grpc"
   # Enable logs export via OTLP
@@ -293,8 +293,8 @@ httploaddirector:
 # JMeter Load Testing settings
 jmeter:
   enabled: true
-  backoffLimit: 0
-  restartPolicy: Never
+  backoffLimit: 3
+  restartPolicy: OnFailure
   image:
     # Leave empty to use global.image.registry
     registry: ""
@@ -305,11 +305,17 @@ jmeter:
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"
+  # Resource limits to prevent OOM and cluster resource exhaustion
   resources:
     limits:
       cpu: 2000m
       memory: 2Gi
     requests:
       cpu: 500m
-      memory: 512Mi
+      memory: 1Gi
+  # Test configuration (add these if not present)
+  numUsers: 10
+  rampUp: 60
+  duration: 300
+  testPlan: "teastore_browse.jmx"
   nodeSelector: {}

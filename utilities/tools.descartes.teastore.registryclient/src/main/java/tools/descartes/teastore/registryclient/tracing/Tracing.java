@@ -8,6 +8,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.HttpHeaders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
@@ -40,6 +43,8 @@ import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppen
  * @author Long Bui
  */
 public final class Tracing {
+
+  private static final Logger LOG = LoggerFactory.getLogger(Tracing.class);
 
   /**
    * Instrumentation library version for OpenTelemetry tracer.
@@ -87,17 +92,18 @@ public final class Tracing {
       };
 
   /**
-   * Initialize the OpenTelemetry tracer for the service and install the log appender.
-   * When using OpenTelemetry auto-instrumentation or SDK configuration via environment variables,
+   * Initialize the OpenTelemetry tracer for the service.
+   * When using OpenTelemetry auto-instrumentation (Java agent or Kubernetes operator),
    * this method uses GlobalOpenTelemetry to get the tracer.
    *
-   * <p>This method also installs the OpenTelemetry Logback appender to enable automatic
-   * trace-log correlation. When logs are emitted within an active span, the trace_id and
-   * span_id are automatically attached to the log record.
-   *
    * <p>For auto-instrumentation (Java agent or Kubernetes operator), the SDK is configured
-   * automatically. For manual SDK usage, configure the SDK using AutoConfiguredOpenTelemetrySdk
-   * or programmatic configuration before calling this method.
+   * automatically and the Logback appender is installed by the agent. For manual SDK usage,
+   * configure the SDK using AutoConfiguredOpenTelemetrySdk or programmatic configuration
+   * before calling this method.
+   *
+   * <p>Note: When using the Java agent, do NOT call OpenTelemetryAppender.install() manually
+   * as it will conflict with the agent's automatic appender installation. The agent handles
+   * both trace instrumentation and log correlation automatically.
    *
    * @param service is usually the name of the service
    */
@@ -108,12 +114,25 @@ public final class Tracing {
           OpenTelemetry openTelemetry = GlobalOpenTelemetry.get();
           tracer = openTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
           
-          // Install the OpenTelemetry Logback appender for trace-log correlation.
-          // This enables automatic correlation of logs with traces - when a log is 
-          // emitted within an active span, the trace_id and span_id are automatically
-          // attached to the log record without needing manual MDC management.
+          // Check if running with Java agent. The Java agent doesn't set a standard property,
+          // but we can check if GlobalOpenTelemetry has been initialized by the agent by
+          // checking if it's NOT the default no-op instance. A simpler approach is to just
+          // catch the IllegalStateException if appender is already installed.
+          // 
+          // When using Java agent, it handles appender installation automatically.
+          // Only install manually if not using the agent (for standalone SDK usage).
           // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
-          OpenTelemetryAppender.install(openTelemetry);
+          try {
+            OpenTelemetryAppender.install(openTelemetry);
+            LOG.debug("OpenTelemetry Logback appender installed successfully");
+          } catch (IllegalStateException e) {
+            // Appender already installed (likely by agent) - this is fine
+            // The agent installs the appender automatically when logback-appender-1.0
+            // instrumentation is enabled (which is the default)
+            LOG.debug("OpenTelemetry Logback appender already installed (likely by Java agent)");
+          }
+          // When using Java agent, the logback-mdc instrumentation automatically populates MDC
+          // with trace_id and span_id, so no manual MDC management is needed.
           
           initialized = true;
         }
