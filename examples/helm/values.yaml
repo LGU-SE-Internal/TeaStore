@@ -293,8 +293,8 @@ httploaddirector:
 # JMeter Load Testing settings
 jmeter:
   enabled: true
-  backoffLimit: 0
-  restartPolicy: Never
+  backoffLimit: 3
+  restartPolicy: OnFailure
   image:
     # Leave empty to use global.image.registry
     registry: ""
@@ -305,4 +305,17 @@ jmeter:
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"
+  # Resource limits to prevent OOM and cluster resource exhaustion
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  # Test configuration (add these if not present)
+  numUsers: 10
+  rampUp: 60
+  duration: 300
+  testPlan: "teastore_browse.jmx"
   nodeSelector: {}

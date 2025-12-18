@@ -3,6 +3,9 @@
   Logback configuration with OpenTelemetry appender for trace/log correlation.
   Logs are sent to OTEL Collector via OTLP along with trace context (trace_id, span_id).
   
+  The OTLP endpoint must be configured via environment variables (OTEL_EXPORTER_OTLP_ENDPOINT)
+  or through the Java agent configuration when using auto-instrumentation.
+  
   Log-trace correlation is automatic: when a log is emitted within an active span
   (after span.makeCurrent()), the OpenTelemetry appender automatically includes
   trace_id and span_id in the log record. No manual MDC management is required.

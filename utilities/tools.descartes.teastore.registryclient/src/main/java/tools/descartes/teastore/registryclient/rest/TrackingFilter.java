@@ -61,18 +61,20 @@ public class TrackingFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     
-    // Check if we have an active span - if so, the agent is likely handling instrumentation
-    Span currentSpan = Span.current();
-    boolean agentActive = currentSpan != null && currentSpan.getSpanContext().isValid();
+    // Check if the OpenTelemetry Java agent is active
+    // The agent sets this system property when it initializes
+    boolean agentActive = "true".equalsIgnoreCase(System.getProperty("otel.javaagent.enabled")) ||
+                          Boolean.getBoolean("otel.javaagent.enabled");
+    
     Scope customScope = null;
     boolean mdcSetByUs = false;
     
     try {
       if (!agentActive) {
-        // No active span from agent - manually extract context and create span
+        // No agent detected - manually extract context and create span
         // This is the fallback for when agent is not used
         customScope = Tracing.extractCurrentSpan((HttpServletRequest) request);
-        currentSpan = Span.current();
+        Span currentSpan = Span.current();
         
         // Set MDC for log correlation
         if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
@@ -90,21 +92,28 @@ public class TrackingFilter implements Filter {
           }
         }
       } else {
-        // Agent is active - MDC should already be populated by agent's logback-mdc instrumentation
-        // Just verify and log for debugging
-        if (LOG.isDebugEnabled()) {
-          String traceId = MDC.get(MDC_TRACE_ID);
-          String spanId = MDC.get(MDC_SPAN_ID);
-          HttpServletRequest httpRequest = (HttpServletRequest) request;
-          
-          // Use MDC values if available, otherwise get from current span
-          if (traceId == null && currentSpan != null) {
+        // Agent is active - MDC should be populated by agent's logback-mdc instrumentation
+        // Ensure MDC is populated even if agent's instrumentation hasn't run yet
+        Span currentSpan = Span.current();
+        String traceId = MDC.get(MDC_TRACE_ID);
+        String spanId = MDC.get(MDC_SPAN_ID);
+        
+        // If MDC is empty but we have a valid span, populate MDC from the span
+        if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
+          if (traceId == null) {
             traceId = currentSpan.getSpanContext().getTraceId();
+            MDC.put(MDC_TRACE_ID, traceId);
+            mdcSetByUs = true;
           }
-          if (spanId == null && currentSpan != null) {
+          if (spanId == null) {
             spanId = currentSpan.getSpanContext().getSpanId();
+            MDC.put(MDC_SPAN_ID, spanId);
+            mdcSetByUs = true;
           }
-          
+        }
+        
+        if (LOG.isDebugEnabled()) {
+          HttpServletRequest httpRequest = (HttpServletRequest) request;
           LOG.debug("Agent tracing - Processing request: {} {} trace_id={} span_id={}",
               httpRequest.getMethod(),
               httpRequest.getRequestURI(),
