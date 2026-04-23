@@ -214,11 +214,19 @@ persistence:
 # OpenTelemetry Instrumentation settings
 opentelemetry:
   enabled: true
-  # Language type for instrumentation: java, python, nodejs, dotnet, go, ruby, php
+  # Language type for auto-instrumentation (drives the
+  # `instrumentation.opentelemetry.io/inject-<language>` pod annotation).
+  # Supported: java, python, nodejs, dotnet, go, ruby, php
   language: java
-  # The instrumentation resource name in monitoring namespace
+  # Name of the OpenTelemetry `Instrumentation` custom resource the operator
+  # should inject. Used as the right-hand side of the inject annotation:
+  #   instrumentation.opentelemetry.io/inject-<language>: "<monitoringNamespace>/<instrumentationName>"
+  # Override when your Instrumentation CR has a different name.
   instrumentationName: "opentelemetry-kube-stack"
-  # The namespace where OpenTelemetry Instrumentation resource is deployed
+  # Namespace where the `Instrumentation` CR above lives. Override when the
+  # operator is configured with its CR outside the conventional `monitoring`
+  # namespace (e.g. `otel`, `observability`). The operator webhook silently
+  # skips injection if <namespace>/<name> does not resolve.
   monitoringNamespace: "monitoring"
   # OTLP exporter endpoint for traces and logs
   # This should point to your OTEL Collector service
