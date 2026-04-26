@@ -310,6 +310,18 @@ jmeter:
     pullPolicy: Always
     # Leave empty to use global.image.tag
     tag: ""
+  # Image used by the `wait-for-registry` init container. Override on
+  # air-gapped / mirrored-registry clusters that cannot pull from docker.io.
+  # Leaving `registry` empty preserves the historical default of pulling
+  # `busybox:1.36` from docker.io (no behavior change for existing users).
+  # Example for a mirrored registry:
+  #   --set jmeter.waitForRegistryImage.registry=pair-cn-shanghai.cr.volces.com/opspai
+  # produces: pair-cn-shanghai.cr.volces.com/opspai/busybox:1.36
+  waitForRegistryImage:
+    registry: ""
+    repository: "busybox"
+    tag: "1.36"
+    pullPolicy: ""
   # Target WebUI service
   targetHost: "teastore-webui"
   targetPort: "8080"
