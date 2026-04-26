@@ -121,11 +121,26 @@ Usage: {{ include "teastore.imagePullPolicy" (dict "imageConfig" .Values.webui.i
 {{- end }}
 
 {{/*
-Init container to wait for all services to be registered in the registry
+Init container to wait for all services to be registered in the registry.
+The busybox image used here can be overridden via `.Values.jmeter.waitForRegistryImage`
+to support air-gapped or mirrored-registry clusters. The default keeps the
+historical `busybox:1.36` from docker.io so existing users see no change.
 */}}
 {{- define "teastore.initContainer.waitForRegistry" -}}
+{{- $img := .Values.jmeter.waitForRegistryImage | default dict -}}
+{{- $repository := $img.repository | default "busybox" -}}
+{{- $tag := $img.tag | default "1.36" -}}
+{{- $registry := $img.registry | default "" -}}
+{{- $pullPolicy := $img.pullPolicy | default "" -}}
 - name: wait-for-registry
-  image: busybox:1.36
+  {{- if $registry }}
+  image: "{{ $registry | trimSuffix "/" }}/{{ $repository }}:{{ $tag }}"
+  {{- else }}
+  image: "{{ $repository }}:{{ $tag }}"
+  {{- end }}
+  {{- if $pullPolicy }}
+  imagePullPolicy: {{ $pullPolicy }}
+  {{- end }}
   command:
     - sh
     - -c
