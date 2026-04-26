@@ -13,6 +13,7 @@ Selector labels
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/name: {{ include "teastore.recommender.microservice" . }}
 app.kubernetes.io/component: teastore-recommender
+app: teastore-recommender
 {{- end }}
 
 {{- define "teastore.recommender.hostname" -}}

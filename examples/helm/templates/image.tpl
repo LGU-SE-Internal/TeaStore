@@ -13,6 +13,7 @@ Selector labels
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/name: {{ include "teastore.image.microservice" . }}
 app.kubernetes.io/component: teastore-image
+app: teastore-image
 {{- end }}
 
 {{- define "teastore.image.hostname" -}}
