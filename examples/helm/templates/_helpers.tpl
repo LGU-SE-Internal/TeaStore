@@ -40,13 +40,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
-Selector labels
+Selector labels (chart-wide; intentionally does NOT include `app:`).
+
+Each per-component helper (e.g. `teastore.auth.selectorLabels`) is responsible
+for adding its own per-service `app: teastore-<component>` value so that pods,
+StatefulSet/Deployment selectors, and Service selectors all agree on a unique
+identifier per microservice.
 */}}
 {{- define "teastore.selectorLabels" -}}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/part-of: teastore
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-app: teastore
 version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 
@@ -71,6 +75,7 @@ HTTP Load Generator helpers
 {{- define "teastore.httploadgen.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/component: teastore-httploadgen
+app: teastore-httploadgen
 {{- end }}
 
 {{/*
@@ -83,6 +88,7 @@ HTTP Load Director helpers
 {{- define "teastore.httploaddirector.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/component: teastore-httploaddirector
+app: teastore-httploaddirector
 {{- end }}
 
 {{/*
@@ -100,6 +106,7 @@ app.kubernetes.io/component: teastore-jmeter
 {{- define "teastore.jmeter.selectorLabels" -}}
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/component: teastore-jmeter
+app: teastore-jmeter
 {{- end }}
 
 {{/*

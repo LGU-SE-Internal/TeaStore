@@ -13,6 +13,7 @@ Selector labels
 {{ include "teastore.selectorLabels" . }}
 app.kubernetes.io/name: {{ include "teastore.persistence.microservice" . }}
 app.kubernetes.io/component: teastore-persistence
+app: teastore-persistence
 {{- end }}
 
 {{- define "teastore.persistence.hostname" -}}
