@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  teastore:
+  - apiVersion: v2
+    appVersion: 1.4.0
+    created: "2026-04-27T01:48:54.666348916Z"
+    description: A Helm chart for TeaStore
+    digest: c6965821254f7d11ccff5ac0f3ed2bbd5994662c8bb4ab043b8ad012e6526867
+    name: teastore
+    type: application
+    urls:
+    - https://lgu-se-internal.github.io/TeaStore/teastore-0.1.4.tgz
+    version: 0.1.4
+generated: "2026-04-27T01:48:54.665070853Z"
