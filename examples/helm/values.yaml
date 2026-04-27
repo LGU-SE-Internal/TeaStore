@@ -334,8 +334,15 @@ jmeter:
       cpu: 500m
       memory: 1Gi
   # Test configuration (add these if not present)
-  numUsers: 10
+  # Defaults capped to keep span-emission rate in line with other DSB-style
+  # benchmarks (TT, sockshop, otel-demo). Earlier defaults of numUsers=10 +
+  # duration=300 produced ~22x the spans/sec of comparable benchmarks and
+  # could overload shared OTel collector / ClickHouse pipelines when several
+  # teastore namespaces ran in parallel. Override via --set jmeter.numUsers=10
+  # --set jmeter.duration=300 if your collector pipeline can absorb it.
+  # See: https://github.com/OperationsPAI/aegis/issues/216
+  numUsers: 2
   rampUp: 60
-  duration: 300
+  duration: 120
   testPlan: "teastore_browse.jmx"
   nodeSelector: {}
