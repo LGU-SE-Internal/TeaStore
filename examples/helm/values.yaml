@@ -259,7 +259,7 @@ opentelemetry:
 # Disable to fall back to a shared collector — also override
 # .opentelemetry.otlpEndpoint to point at that collector's URL.
 otelCollector:
-  enabled: true
+  enabled: false
   name: otel-collector
   replicas: 1
   image:
