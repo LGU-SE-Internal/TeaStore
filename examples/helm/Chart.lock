@@ -1,0 +1,6 @@
+dependencies:
+- name: aegis-points
+  repository: ""
+  version: 0.1.0
+digest: sha256:4412eaaf171db92a89fd353c9a55c87d580f47e5c90daee42619ee7af488691b
+generated: "2026-05-29T07:54:15.418950275+01:00"
