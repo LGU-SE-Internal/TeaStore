@@ -8,9 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.HttpHeaders;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
@@ -20,31 +17,20 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
-import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender;
 
 /**
  * Utility functions for OpenTelemetry integration.
- * Migrated from OpenTracing/Jaeger to OpenTelemetry SDK.
  *
- * <p>This implementation is designed to work with OpenTelemetry auto-instrumentation
- * (Java agent or Kubernetes operator), which configures the SDK via environment variables.
- * When running without auto-instrumentation, the SDK should be configured programmatically
- * or using the autoconfigure module.
- *
- * <p>Log correlation with traces:
- * The OpenTelemetry Logback appender automatically correlates logs with the current trace
- * when a span is active (via {@code span.makeCurrent()}). For this to work:
- * <ul>
- *   <li>With auto-instrumentation: The agent handles appender installation automatically</li>
- *   <li>Without auto-instrumentation: Call {@code OpenTelemetryAppender.install(openTelemetry)}
- *       after SDK initialization, which this class does automatically</li>
- * </ul>
+ * <p>This class relies entirely on the OpenTelemetry Java agent for SDK setup,
+ * exporting, and log/trace correlation. It only touches the OpenTelemetry API
+ * ({@link GlobalOpenTelemetry}) to obtain a tracer and propagate context across
+ * the Ribbon/Jersey client boundary. The agent's logback-appender instrumentation
+ * bridges logback records to OTLP and stamps the active span's trace context onto
+ * them, so no SDK or appender is bundled or installed here.
  *
  * @author Long Bui
  */
 public final class Tracing {
-
-  private static final Logger LOG = LoggerFactory.getLogger(Tracing.class);
 
   /**
    * Instrumentation library version for OpenTelemetry tracer.
@@ -113,27 +99,6 @@ public final class Tracing {
         if (!initialized) {
           OpenTelemetry openTelemetry = GlobalOpenTelemetry.get();
           tracer = openTelemetry.getTracer(service, INSTRUMENTATION_VERSION);
-          
-          // Check if running with Java agent. The Java agent doesn't set a standard property,
-          // but we can check if GlobalOpenTelemetry has been initialized by the agent by
-          // checking if it's NOT the default no-op instance. A simpler approach is to just
-          // catch the IllegalStateException if appender is already installed.
-          // 
-          // When using Java agent, it handles appender installation automatically.
-          // Only install manually if not using the agent (for standalone SDK usage).
-          // See: https://github.com/open-telemetry/opentelemetry-java-examples/tree/main/log-appender
-          try {
-            OpenTelemetryAppender.install(openTelemetry);
-            LOG.debug("OpenTelemetry Logback appender installed successfully");
-          } catch (IllegalStateException e) {
-            // Appender already installed (likely by agent) - this is fine
-            // The agent installs the appender automatically when logback-appender-1.0
-            // instrumentation is enabled (which is the default)
-            LOG.debug("OpenTelemetry Logback appender already installed (likely by Java agent)");
-          }
-          // When using Java agent, the logback-mdc instrumentation automatically populates MDC
-          // with trace_id and span_id, so no manual MDC management is needed.
-          
           initialized = true;
         }
       }
