@@ -112,14 +112,12 @@ public class TrackingFilter implements Filter {
           }
         }
         
-        if (LOG.isDebugEnabled()) {
-          HttpServletRequest httpRequest = (HttpServletRequest) request;
-          LOG.debug("Agent tracing - Processing request: {} {} trace_id={} span_id={}",
-              httpRequest.getMethod(),
-              httpRequest.getRequestURI(),
-              traceId,
-              spanId);
-        }
+        // Emit one INFO log per request on the request thread, inside the agent's
+        // active server span, so the agent's logback instrumentation stamps it with
+        // the live TraceId. Services like auth/persistence have no app-level logging
+        // of their own; this is the request-path log that carries correlation.
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        LOG.info("{} {}", httpRequest.getMethod(), httpRequest.getRequestURI());
       }
 
       chain.doFilter(request, response);
