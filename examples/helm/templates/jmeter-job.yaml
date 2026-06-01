@@ -12,8 +12,14 @@ spec:
       labels:
         {{- include "teastore.jmeter.selectorLabels" . | nindent 8 }}
       annotations:
-        {{- include "teastore.otel.podAnnotations" . | nindent 8 }}
-      
+        # The JMeter pod is the load generator (traffic source), not a service
+        # under test. Explicitly opt it out of OTel auto-instrumentation: if the
+        # agent is injected here it wraps every request in a client span and
+        # propagates W3C traceparent, so webui's entrance Server span becomes a
+        # CHILD instead of a root span and the detector sees no root spans.
+        {{- if .Values.opentelemetry.enabled }}
+        instrumentation.opentelemetry.io/inject-{{ .Values.opentelemetry.language }}: "false"
+        {{- end }}
     spec:
       restartPolicy: {{ .Values.jmeter.restartPolicy }}
       initContainers:
