@@ -14,12 +14,12 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import tools.descartes.teastore.registryclient.tracing.Tracing;
 
 /**
- * Servlet filter for request tracking using OpenTelemetry.
- * Extracts trace context from incoming requests and sets up MDC for log correlation.
+ * Servlet filter that emits one request-path log per request so the OpenTelemetry
+ * Java agent stamps it with the active span's TraceId. When no agent span is
+ * present on the thread it falls back to extracting/creating a span itself.
  *
  * @author Simon
  *
@@ -27,10 +27,6 @@ import tools.descartes.teastore.registryclient.tracing.Tracing;
 public class TrackingFilter implements Filter {
 
   private static final Logger LOG = LoggerFactory.getLogger(TrackingFilter.class);
-
-  // MDC keys for log correlation
-  private static final String MDC_TRACE_ID = "trace_id";
-  private static final String MDC_SPAN_ID = "span_id";
 
   /**
    * Empty initialization method.
@@ -60,78 +56,30 @@ public class TrackingFilter implements Filter {
    */
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
-    
-    // Check if the OpenTelemetry Java agent is active
-    // The agent sets this system property when it initializes
-    boolean agentActive = "true".equalsIgnoreCase(System.getProperty("otel.javaagent.enabled")) ||
-                          Boolean.getBoolean("otel.javaagent.enabled");
-    
+
+    // Detect the agent by whether it has already made a valid server span current.
+    // (System.getProperty("otel.javaagent.enabled") is NOT set by the agent at
+    // runtime — it returns null even when the agent is attached — so the old
+    // property-based check always fell into the manual branch.)
     Scope customScope = null;
-    boolean mdcSetByUs = false;
-    
+    if (!Span.current().getSpanContext().isValid()) {
+      // No agent span on this thread: extract/create one ourselves so the request
+      // still carries trace context.
+      customScope = Tracing.extractCurrentSpan((HttpServletRequest) request);
+    }
+
     try {
-      if (!agentActive) {
-        // No agent detected - manually extract context and create span
-        // This is the fallback for when agent is not used
-        customScope = Tracing.extractCurrentSpan((HttpServletRequest) request);
-        Span currentSpan = Span.current();
-        
-        // Set MDC for log correlation
-        if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
-          MDC.put(MDC_TRACE_ID, currentSpan.getSpanContext().getTraceId());
-          MDC.put(MDC_SPAN_ID, currentSpan.getSpanContext().getSpanId());
-          mdcSetByUs = true;
-          
-          if (LOG.isDebugEnabled()) {
-            HttpServletRequest httpRequest = (HttpServletRequest) request;
-            LOG.debug("Manual tracing - Processing request: {} {} trace_id={} span_id={}",
-                httpRequest.getMethod(),
-                httpRequest.getRequestURI(),
-                currentSpan.getSpanContext().getTraceId(),
-                currentSpan.getSpanContext().getSpanId());
-          }
-        }
-      } else {
-        // Agent is active - MDC should be populated by agent's logback-mdc instrumentation
-        // Ensure MDC is populated even if agent's instrumentation hasn't run yet
-        Span currentSpan = Span.current();
-        String traceId = MDC.get(MDC_TRACE_ID);
-        String spanId = MDC.get(MDC_SPAN_ID);
-        
-        // If MDC is empty but we have a valid span, populate MDC from the span
-        if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
-          if (traceId == null) {
-            traceId = currentSpan.getSpanContext().getTraceId();
-            MDC.put(MDC_TRACE_ID, traceId);
-            mdcSetByUs = true;
-          }
-          if (spanId == null) {
-            spanId = currentSpan.getSpanContext().getSpanId();
-            MDC.put(MDC_SPAN_ID, spanId);
-            mdcSetByUs = true;
-          }
-        }
-        
-        if (LOG.isDebugEnabled()) {
-          HttpServletRequest httpRequest = (HttpServletRequest) request;
-          LOG.debug("Agent tracing - Processing request: {} {} trace_id={} span_id={}",
-              httpRequest.getMethod(),
-              httpRequest.getRequestURI(),
-              traceId,
-              spanId);
-        }
-      }
+      // One INFO log per request, on the request thread inside the active server
+      // span, so the agent's logback instrumentation stamps it with the live
+      // TraceId and ships it via OTLP. auth/image/persistence/recommender/webui
+      // have little or no request-path logging of their own; this is the log that
+      // carries correlation for the abnormal-window logs parquet.
+      HttpServletRequest httpRequest = (HttpServletRequest) request;
+      LOG.info("{} {}", httpRequest.getMethod(), httpRequest.getRequestURI());
 
       chain.doFilter(request, response);
-      
+
     } finally {
-      // Only clean up MDC if we set it ourselves
-      if (mdcSetByUs) {
-        MDC.remove(MDC_TRACE_ID);
-        MDC.remove(MDC_SPAN_ID);
-      }
-      
-      // Close custom scope if we created one
       if (customScope != null) {
         customScope.close();
       }

@@ -16,7 +16,9 @@
 			<artifactId>entities</artifactId>
 			<version>${teastoreversion}</version>
 		</dependency>
-		<!-- OpenTelemetry Dependencies -->
+		<!-- OpenTelemetry API only. The Java agent supplies its own shaded SDK,
+		     exporter, and logback-appender; bundling them here created a second
+		     OpenTelemetry instance that broke log/trace correlation. -->
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-api</artifactId>
@@ -24,34 +26,13 @@
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-sdk</artifactId>
-			<version>${opentelemetry.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-exporter-otlp</artifactId>
-			<version>${opentelemetry.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.opentelemetry.semconv</groupId>
-			<artifactId>opentelemetry-semconv</artifactId>
-			<version>1.28.0-alpha</version>
-		</dependency>
-		<dependency>
-			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-context</artifactId>
 			<version>${opentelemetry.version}</version>
 		</dependency>
-		<!-- Logback with OpenTelemetry appender for log correlation -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>${logback.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.opentelemetry.instrumentation</groupId>
-			<artifactId>opentelemetry-logback-appender-1.0</artifactId>
-			<version>${opentelemetry.instrumentation.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.glassfish.jersey.containers</groupId>
