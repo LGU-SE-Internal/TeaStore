@@ -230,7 +230,7 @@ opentelemetry:
   monitoringNamespace: "monitoring"
   # OTLP exporter endpoint for traces and logs
   # This should point to your OTEL Collector service
-  otlpEndpoint: "http://opentelemetry-kube-stack-deployment-collector.monitoring.svc.cluster.local:4317"
+  otlpEndpoint: "http://otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4317"
   # OTLP protocol: grpc or http/protobuf
   otlpProtocol: "grpc"
   # Enable logs export via OTLP
@@ -241,6 +241,47 @@ opentelemetry:
   metricsExporterEnabled: true
   # Sampling ratio (1.0 = 100% sampling)
   samplingRatio: "1.0"
+
+# Per-namespace OpenTelemetry Collector that exports traces, metrics and logs
+# straight to ClickHouse. Each TeaStore release runs its own collector (named
+# `otel-collector` in the release namespace) so traces are not dropped by a
+# shared cross-namespace collector at multi-namespace scale.
+otelCollector:
+  enabled: true
+  name: otel-collector
+  replicas: 1
+  image:
+    # byte-cluster nodes cannot egress docker.io; the volces mirror is
+    # mandatory. Override only with another reachable registry.
+    repository: pair-cn-shanghai.cr.volces.com/opspai/opentelemetry-collector-contrib
+    tag: "0.142.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+  clickhouse:
+    endpoint: "tcp://clickstack-clickhouse-clickhouse-headless.monitoring.svc.cluster.local:9000?dial_timeout=10s&compress=lz4&username=default"
+    database: otel
+    tracesTableName: otel_traces
+    metricsTableName: otel_metrics
+    logsTableName: otel_logs
+    ttl: 72h
+    timeout: 30s
+  sendingQueue:
+    enabled: true
+    numConsumers: 10
+    queueSize: 5000
+  batch:
+    sendBatchSize: 2000
+    sendBatchMaxSize: 4000
+    timeout: 5s
+  memoryLimiter:
+    limitPercentage: 75
+    spikeLimitPercentage: 15
 
 # HTTP Load Generator settings
 httploadgen:

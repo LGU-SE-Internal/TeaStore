@@ -26,7 +26,7 @@ These environment variables configure the OpenTelemetry SDK for traces and logs 
     fieldRef:
       fieldPath: metadata.labels['app.kubernetes.io/component']
 - name: OTEL_EXPORTER_OTLP_ENDPOINT
-  value: {{ .Values.opentelemetry.otlpEndpoint | quote }}
+  value: {{ tpl .Values.opentelemetry.otlpEndpoint . | quote }}
 - name: OTEL_EXPORTER_OTLP_PROTOCOL
   value: {{ .Values.opentelemetry.otlpProtocol | quote }}
 {{- if .Values.opentelemetry.tracesExporterEnabled }}
