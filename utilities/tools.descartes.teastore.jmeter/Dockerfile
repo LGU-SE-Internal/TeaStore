@@ -29,6 +29,7 @@ ENV PORT="80"
 ENV NUM_USERS="2"
 ENV RAMP_UP="10"
 ENV DURATION="300"
+ENV TARGET_RPM="1000"
 ENV TEST_PLAN="teastore_browse_nogui.jmx"
 
 # Run JMeter directly with Java. Shell form so NUM_USERS/HOSTNAME/PORT/RAMP_UP
@@ -40,5 +41,6 @@ CMD java -jar /opt/apache-jmeter-${JMETER_VERSION}/bin/ApacheJMeter.jar \
      -Jport="${PORT}" \
      -JNUM_USERS="${NUM_USERS}" \
      -JnumUser="${NUM_USERS}" \
+     -JTARGET_RPM="${TARGET_RPM}" \
      -JrampUp="${RAMP_UP}" \
      -l /jmeter/results/results.jtl
