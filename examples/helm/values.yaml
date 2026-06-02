@@ -365,7 +365,7 @@ jmeter:
     pullPolicy: ""
   # Target WebUI service
   targetHost: "teastore-webui"
-  targetPort: "8080"
+  targetPort: "80"
   # Resource limits to prevent OOM and cluster resource exhaustion
   resources:
     limits:
