@@ -29,7 +29,18 @@ webui:
     type: NodePort
     port: 80
     annotations: {}
-  resources: {}
+  # JVM/Tomcat pod. dockermemoryconfigurator sets -Xmx to 50% of the memory
+  # LIMIT at boot (TOMCAT_HEAP_MEM_PERCENTAGE=50), so the limit must stay >=
+  # 2x the live heap working set or normal traffic OOMs. webui WS ~1.6Gi ->
+  # heap@50% of 4Gi = 2Gi > 1.6Gi. cpu limit is generous so a stress fault
+  # (cpu_worker=4) trivially breaches it without throttling baseline traffic.
+  resources:
+    requests:
+      cpu: 150m
+      memory: 3Gi
+    limits:
+      cpu: 300m
+      memory: 4Gi
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -56,7 +67,15 @@ registry:
   service:
     port: 8080
     annotations: {}
-  resources: {}
+  # JVM/Tomcat pod (heap@50% of limit). registry RSS ~731Mi -> heap@50% of
+  # 1.5Gi = 768Mi covers it. Generous cpu limit for a clean stress target.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1Gi
+    limits:
+      cpu: 200m
+      memory: 1536Mi
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -112,7 +131,15 @@ auth:
     type: NodePort
     port: 8080
     annotations: {}
-  resources: {}
+  # JVM/Tomcat pod (heap@50% of limit). auth RSS ~2.3Gi -> heap@50% of
+  # 3584Mi = 1792Mi; the ~3.5Gi limit gives non-heap slack above the WS.
+  resources:
+    requests:
+      cpu: 150m
+      memory: 2800Mi
+    limits:
+      cpu: 300m
+      memory: 3584Mi
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -141,7 +168,15 @@ image:
     type: NodePort
     port: 8080
     annotations: {}
-  resources: {}
+  # JVM/Tomcat pod (heap@50% of limit), heaviest mem. image RSS ~2592Mi ->
+  # heap@50% of 4Gi = 2Gi; the 4Gi limit keeps non-heap slack above the WS.
+  resources:
+    requests:
+      cpu: 120m
+      memory: 3200Mi
+    limits:
+      cpu: 250m
+      memory: 4Gi
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -170,7 +205,15 @@ recommender:
     type: NodePort
     port: 8080
     annotations: {}
-  resources: {}
+  # JVM/Tomcat pod (heap@50% of limit). recommender RSS ~1184Mi -> heap@50%
+  # of 2Gi = 1Gi; the 2Gi limit keeps non-heap slack above the WS.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1536Mi
+    limits:
+      cpu: 200m
+      memory: 2048Mi
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -199,7 +242,15 @@ persistence:
     type: NodePort
     port: 8080
     annotations: {}
-  resources: {}
+  # JVM/Tomcat pod (heap@50% of limit). persistence RSS ~2098Mi -> heap@50%
+  # of 3328Mi = 1664Mi; the ~3.3Gi limit keeps non-heap slack above the WS.
+  resources:
+    requests:
+      cpu: 120m
+      memory: 2600Mi
+    limits:
+      cpu: 250m
+      memory: 3328Mi
   autoscaling:
     enabled: false
     minReplicas: 1
