@@ -1,0 +1,18 @@
+apiVersion: v1
+entries:
+  teastore:
+  - apiVersion: v2
+    appVersion: 1.4.0
+    created: "2026-06-13T08:40:51.918966287Z"
+    dependencies:
+    - name: aegis-points
+      repository: ""
+      version: 0.1.0
+    description: A Helm chart for TeaStore
+    digest: 04b8cfd9e134c136bad5d9e10bb755cc1fe30dc0fa45a8137b2d0176bab2a1e1
+    name: teastore
+    type: application
+    urls:
+    - https://lgu-se-internal.github.io/TeaStore/teastore-0.1.11.tgz
+    version: 0.1.11
+generated: "2026-06-13T08:40:51.915822386Z"
